@@ -1,38 +1,84 @@
 .App {
-  text-align: center;
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) 4fr minmax(150px, 1fr);
+  margin-top: 5vh;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.board{
+  display: grid;
+  grid-gap: 2px;
+  //width: 80vh;
+  margin: 0 auto;
+  grid-template-columns: repeat(20, 4vh);
+  grid-template-rows: repeat(20, 4vh);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.left {
+  margin-left: 10px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.right {
+  margin-right: 10px;
 }
 
-.App-link {
-  color: #61dafb;
+.controls div {
+  margin-bottom:10px;
+  font-size: 12px
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+
+.cell {
+  border: 1px solid #efefef;
+  border-radius: .5vh;
+}
+
+.key {
+  text-align: left;
+}
+
+.keyItemWithLabel {
+    display: block;
+    font-size: 12px;
+    margin-right: 10px;
+}
+
+.keyItem {
+  display: inline-block;
+  border: 1px solid #efefef;
+  border-radius: .5vh;
+  width: 1.5vh;
+  height: 1.5vh;
+}
+
+.beenThere {
+  background-color: BLACK;
+}
+
+.open {
+  background-color: MISTYROSE;
+}
+.blocked {
+  background-color: WHEAT;
+}
+
+.actualBoom {
+  background-color: PALETURQUOISE;
+}
+.potentialBoom {
+  background-color: PALEGREEN;
+}
+
+.lastMove {
+  background-color: SLATEBLUE;
+}
+
+.monster {
+  background-color: pink;
+}
+.monster2 {
+  background-color: LIGHTSALMON;
+}
+
+.monster3 {
+  background-color: LIGHTYELLOW;
 }
