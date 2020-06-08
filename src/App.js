@@ -120,7 +120,6 @@ const App = (props) => {
           <div>Score: {score}</div>
           {message && (<div>{message}</div>)}
         </div>
-        { renderKey() }
       </div>
       { renderBoard(board, setBoard, updateScores, updateMessage) }
       <div className="right">

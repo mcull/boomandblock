@@ -28,8 +28,9 @@
 
 
 .cell {
-  border: 1px solid #efefef;
   border-radius: .5vh;
+  font-size: 3.5vh;
+  border: none;
 }
 
 .key {
@@ -51,34 +52,39 @@
 }
 
 .beenThere {
-  background-color: BLACK;
+  background-color: SILVER;
 }
 
 .open {
-  background-color: MISTYROSE;
+  background-color: OLIVEDRAB;
 }
 .blocked {
-  background-color: WHEAT;
+  background-color: CRIMSON;
 }
 
+.potentialBoom,
 .actualBoom {
-  background-color: PALETURQUOISE;
-}
-.potentialBoom {
-  background-color: PALEGREEN;
+  font-size: 4vh;
+  border: none;
 }
 
-.lastMove {
-  background-color: SLATEBLUE;
+.potentialBoom::before,
+.actualBoom::before {
+  content: '☠️';
 }
 
-.monster {
-  background-color: pink;
+.monster::before {
+  content: '🐲';
 }
-.monster2 {
-  background-color: LIGHTSALMON;
+.monster2::before {
+  content: '👺';
 }
 
-.monster3 {
-  background-color: LIGHTYELLOW;
+.monster3::before {
+  content: '👹';
+}
+
+
+.lastMove::before {
+    content: '🐰'
 }
