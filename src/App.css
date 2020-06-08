@@ -6,7 +6,7 @@
 }
 
 .board{
-  border: 10px white solid;
+  border: 20px white solid;
   outline: 2px #999999 solid;
   border-radius: 10vh;
   display: grid;
