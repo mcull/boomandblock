@@ -24,6 +24,34 @@ const states = ['beenThere',
                ]
 const boardSize = 20;
 
+const monsterMap = { monster:
+                      { icon: '🐲',
+                        homeRow: 20,
+                        homwCol: 20
+                      },
+                     monster2:
+                       { icon: '👺',
+                         homeRow: 20,
+                         homeCol: 0 },
+                     monster3:
+                       { icon: '👹',
+                         homeRow: 0,
+                         homeCol: 20
+                       }
+                    }
+
+const bonusPoints = (function() {
+               const x = [];
+               const max = boardSize - 1;
+               x[0] = [];
+               x[max] = [];
+               x[0][0] = 250;
+               x[max][max] = 250;
+               x[0][max] = 150;
+               x[max][0] = 150;
+               return x;
+           })();
+
 const shuffle = (array) => {
   array.sort(() => Math.random() - 0.5);
   return array;
@@ -72,10 +100,10 @@ const init = (firstMove) => {
   for (let i = 0; i < boardSize; i++) {
     board[i] = [];
     for (let j = 0; j < boardSize; j++) {
-      board[i][j] = {state: 'open' };
+      board[i][j] = {state: 'open', row: i, col: j };
       const edges = [0,boardSize-1];
       if (edges.includes(i) && edges.includes(j)) {
-        board[i][j]['score'] = '+' + Math.floor(Math.random()*1000);
+        board[i][j]['score'] = bonusPoints[i][j];
       }
       if (Math.random()*100 < 40) {
         const boomType = Math.random()*100 < 50 ? 'actual' : 'potential';
@@ -112,7 +140,7 @@ const renderKey = () => {
   )
 }
 
-const renderBoard = (board, isValid, HandleValidBounce) => {
+const renderBoard = (board, isValid, handleValidBounce) => {
   return (
     <div className="board">
     { board.map((row, i) => {
@@ -126,10 +154,10 @@ const renderBoard = (board, isValid, HandleValidBounce) => {
                  className={`cell ${type} c${i}-${j} ${validSpace ? 'neighbor' : ''}`}
                  onClick={(e) => {
                    if (validSpace) {
-                     HandleValidBounce(i,j,type);
+                     handleValidBounce(i,j,type);
                    }
                  }}
-            ><div className="bonusScore">{score}</div></div>
+            >{score && <div className="bonusScore">+{score}</div>}</div>
           )
         })
       })
@@ -151,7 +179,7 @@ const App = (props) => {
     return init(lastMove);
   });
   const [playbackRateBounce, setPlaybackRateBounce] = React.useState(0.95);
-  const basicSoundControls = { interrupt:true, volume: .5 };
+  const basicSoundControls = { interrupt:true, volume: .25 };
   const [playBounce] = useSound(
     bounce,
     { playbackRate: playbackRateBounce,
@@ -167,19 +195,72 @@ const App = (props) => {
   const [playOgre, exposedOgreData] = useSound(ogre, basicSoundControls);
   const [playFail] = useSound(fail, basicSoundControls);
 
-  const HandleValidBounce =  (row, col, type) => {
+  const scoreBonus = (row,col) => {
+    const tuple = [];
+    const points = board[row][col].score;
+    tuple[0] = points;
+    if (points) {
+      tuple[1] = `+${points} points for reaching corner square`;
+    }
+    return tuple;
+  }
+
+  const getNeighbors = (row, col) => {
+    const neighbors = [];
+    const above = Math.max(0,row-1);
+    const below = Math.min(boardSize-1,row+1);
+    const left = Math.max(0,col-1);
+    const right = Math.min(boardSize-1,col+1);
+    for (let i = above; i <= below; i++) {
+      for (let j = left; j <= right; j++) {
+        if (i == row && j == col) {
+          continue;
+        }
+        neighbors.push(board[i][j]);
+      }
+    }
+    return neighbors;
+  }
+
+  const isBoxedIn = (row, col) => {
+    const neighbors = getNeighbors(row,col);
+    console.log(neighbors.map(n=>n.state));
+    let isBoxedIn = true;
+    neighbors.forEach((neighbor, i) => {
+      if (!isBoxedIn) {
+        return;
+      }
+      isBoxedIn = ['blocked','beenThere','lastMove'].includes(neighbor.state);
+    });
+    return isBoxedIn;
+  }
+
+  const handleValidBounce =  (row, col, type) => {
     let soundHook = playBounce;
+    const [bonus, bonusMessage] = scoreBonus(row,col);
     switch(type) {
       case 'potentialBoom':
         playRelief();
-        handleSuccessfulMove(row, col, type);
+        handleSuccessfulMove(row, col, type, bonus, bonusMessage);
         break;
       case 'actualBoom':
         playBoom();
+        updateMessage("Blown up by bomb. GAME OVER");
         setGameIsActive(false);
         break;
       case 'open':
-        handleSuccessfulMove(row, col, type);
+        if (isBoxedIn(row, col)) {
+          updateMessage("Boxed in! GAME OVER");
+          setGameIsActive(false);
+        } else {
+          let msg = "+10 points for reaching a safe square."
+          let points = 10;
+          if (bonus) {
+            points = bonus;
+            msg = bonusMessage;
+          }
+          handleSuccessfulMove(row, col, type, points, msg);
+        }
         break;
       case 'monster':
         handleMonster(row, col, type);
@@ -193,7 +274,6 @@ const App = (props) => {
       default:
         // code block
     }
-
   }
 
   const handleSuccessfulMove = (row, col, type, points, message) => {
@@ -207,18 +287,27 @@ const App = (props) => {
   }
 
   const handleMonster = (row, col, type) => {
-    if (random(0,1000) >= 200) {
+    if (random(0,1000) >= 900) {
       playVictory();
-      const msg = "Won the battle against monster and gained 50 points for killing monster.";
-      setScore(score+50);
-      if (lastMove[0] != boardSize-1) {
-        board[boardSize-1][boardSize-1].state = type;
+      const msgs = [`Won the battle against ${monsterMap[type]} and gained 50 points for killing monster.`];
+      let points = 50;
+      const [bonusPoints, bonusMessage] = scoreBonus(row, col);
+      if (bonusPoints) {
+        points += bonusPoints
+        msgs.push(bonusMessage);
+      }
+      //send monster home
+      if (lastMove[0] != monsterMap[type].homeRow) {
+        board[monsterMap[type].homeRow][monsterMap[type].homeCol].state = type;
       } else{
         board[0][0].state = type;
       }
-      handleSuccessfulMove(row, col, type, 50, msg);
+      handleSuccessfulMove(row, col, type, 50, msgs);
     } else {
       playFail();
+      updateMessage([`In battle with ${monsterMap[type].icon}.`,
+                     'Eighty percent chance of winning the battle but lost.',
+                     'GAME OVER']);
       setGameIsActive(false);
     }
   }
@@ -231,7 +320,7 @@ const App = (props) => {
   }
 
   const updateMessage = (newMsg) => {
-    setMessages(messages.concat([newMsg]));
+    setMessages(messages.concat(newMsg));
   }
 
   const resetStats = () => {
@@ -257,6 +346,7 @@ const App = (props) => {
     setLastMove(firstMove);
     setBoard(init(firstMove));
     setScore(0);
+    setMessages([]);
     setGameIsActive(true);
     const totalGames = numGames + 1;
     setNumGames(totalGames);
@@ -280,7 +370,7 @@ const App = (props) => {
         )}
         </div>
       </div>
-      { renderBoard(board, isValid, HandleValidBounce) }
+      { renderBoard(board, isValid, handleValidBounce) }
       <div className="right">
         <div className="controls">
           <div>Num Skulls: 65</div>

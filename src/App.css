@@ -129,22 +129,22 @@
 
 .c0-19 .bonusScore {
   //background-color: rgba(255,255,255,.4);
-  top: -12px;
+  top: -15px;
   //right: -15px;
   //transform: rotate(45deg);
 }
 
 .c19-0 .bonusScore {
-  bottom: -12px;
+  bottom: -15px;
   //left: -15px;
   //transform: rotate(45deg);
 }
 
 .c0-0 .bonusScore {
-  top: -12px;
+  top: -15px;
   //left: -20px;
   //transform: rotate(-45deg);
 }
 .c19-19 .bonusScore {
- bottom: -12px;
+ bottom: -15px;
 }
