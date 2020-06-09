@@ -1,4 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import useSound from 'use-sound';
+import bounce from './sounds/bounce.mp3';
+import relief from './sounds/relief.mp3';
+import boom from './sounds/boom.mp3';
+import victory from './sounds/fanfare.mp3';
+import ogre from './sounds/ogre.mp3';
+import demon from './sounds/demon.mp3';
+import dragon from './sounds/dragon.mp3';
+import fail from './sounds/fail.mp3';
+
+
 import './App.css';
 
 const states = ['beenThere',
@@ -17,6 +28,25 @@ const shuffle = (array) => {
   array.sort(() => Math.random() - 0.5);
   return array;
 }
+
+function useInterval(callback, delay) {
+  const intervalId = React.useRef(null);
+  const savedCallback = React.useRef(callback);
+  React.useEffect(() => {
+    savedCallback.current = callback;
+  });
+  React.useEffect(() => {
+    const tick = () => savedCallback.current();
+    if (typeof delay === 'number') {
+      intervalId.current = window.setInterval(tick, delay);
+      return () => window.clearInterval(intervalId.current);
+    }
+  }, [delay]);
+  return intervalId.current;
+};
+
+const random = (min, max) =>
+  Math.floor(Math.random() * (max - min)) + min;
 
 const update = (board, row, col) => {
   for (let i = 0; i < board.length; i++) {
@@ -82,7 +112,7 @@ const renderKey = () => {
   )
 }
 
-const renderBoard = (board, updateBoard, isValid, updateScores, updateMessage) => {
+const renderBoard = (board, isValid, HandleValidBounce) => {
   return (
     <div className="board">
     { board.map((row, i) => {
@@ -90,16 +120,13 @@ const renderBoard = (board, updateBoard, isValid, updateScores, updateMessage) =
           const type = board[i][j].state;
           const score = board[i][j].score;
           const key = "cell-" + i + "x" + j;
-          const validSpace = isValid(i,j);
+          const validSpace = isValid(i,j, type);
           return (
             <div key={key}
                  className={`cell ${type} c${i}-${j} ${validSpace ? 'neighbor' : ''}`}
                  onClick={(e) => {
                    if (validSpace) {
-                     const newBoard = update(board, i, j);
-                     updateMessage(`${i}x${j}: ${type}`);
-                     updateScores(10);
-                     updateBoard(newBoard, [i,j]);
+                     HandleValidBounce(i,j,type);
                    }
                  }}
             ><div className="bonusScore">{score}</div></div>
@@ -112,17 +139,89 @@ const renderBoard = (board, updateBoard, isValid, updateScores, updateMessage) =
 }
 
 const App = (props) => {
-
+  const [gameIsActive, setGameIsActive] = useState(true);
   const [score, setScore] = useState(0);
   const [maxScore, setMaxScore] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
   const [avgScore, setAvgScore] = useState(0);
   const [numGames, setNumGames] = useState(0);
-  const [message, setMessage] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [lastMove, setLastMove] = useState(() => getRandomCell());
   const [board, setBoard] = useState(() => {
     return init(lastMove);
   });
+  const [playbackRateBounce, setPlaybackRateBounce] = React.useState(0.95);
+  const basicSoundControls = { interrupt:true, volume: .5 };
+  const [playBounce] = useSound(
+    bounce,
+    { playbackRate: playbackRateBounce,
+      interrupt: true,
+      volume: .10
+    }
+  );
+  const [playRelief, exposedReliefData] = useSound(relief, basicSoundControls);
+  const [playBoom, exposedBoomData] = useSound(boom,basicSoundControls);
+  const [playVictory, exposedVictoryData] = useSound(victory, basicSoundControls);
+  const [playDemon, exposedDemonData] = useSound(demon, basicSoundControls);
+  const [playDragon, exposedDragonData] = useSound(dragon, basicSoundControls);
+  const [playOgre, exposedOgreData] = useSound(ogre, basicSoundControls);
+  const [playFail] = useSound(fail, basicSoundControls);
+
+  const HandleValidBounce =  (row, col, type) => {
+    let soundHook = playBounce;
+    switch(type) {
+      case 'potentialBoom':
+        playRelief();
+        handleSuccessfulMove(row, col, type);
+        break;
+      case 'actualBoom':
+        playBoom();
+        setGameIsActive(false);
+        break;
+      case 'open':
+        handleSuccessfulMove(row, col, type);
+        break;
+      case 'monster':
+        handleMonster(row, col, type);
+        break;
+      case 'monster2':
+        handleMonster(row, col, type);
+        break;
+      case 'monster3':
+        handleMonster(row, col, type);
+        break;
+      default:
+        // code block
+    }
+
+  }
+
+  const handleSuccessfulMove = (row, col, type, points, message) => {
+    const newBoard = update(board, row, col);
+    const msg = message || `${row}x${col}: ${type}`;
+    updateMessage(msg);
+    updateScores(points || 10);
+    updateBoard(newBoard, [row,col]);
+    playBounce();
+    setPlaybackRateBounce(playbackRateBounce + 0.01);
+  }
+
+  const handleMonster = (row, col, type) => {
+    if (random(0,1000) >= 200) {
+      playVictory();
+      const msg = "Won the battle against monster and gained 50 points for killing monster.";
+      setScore(score+50);
+      if (lastMove[0] != boardSize-1) {
+        board[boardSize-1][boardSize-1].state = type;
+      } else{
+        board[0][0].state = type;
+      }
+      handleSuccessfulMove(row, col, type, 50, msg);
+    } else {
+      playFail();
+      setGameIsActive(false);
+    }
+  }
 
   const updateScores = (points) => {
     const newScore = score + points;
@@ -132,7 +231,7 @@ const App = (props) => {
   }
 
   const updateMessage = (newMsg) => {
-    setMessage(newMsg);
+    setMessages(messages.concat([newMsg]));
   }
 
   const resetStats = () => {
@@ -147,10 +246,10 @@ const App = (props) => {
     setLastMove(lastMove);
   }
 
-  const isValid = (row,col) => {
-    const x =  [row-1,row,row+1].includes(lastMove[0]) &&
+  const isValid = (row,col,type) => {
+    return gameIsActive && !['blocked','beenThere','lastMove'].includes(type) &&
+           [row-1,row,row+1].includes(lastMove[0]) &&
            [col-1,col,col+1].includes(lastMove[1]);
-    return x;
   }
 
   const handleStartOver = () => {
@@ -158,6 +257,7 @@ const App = (props) => {
     setLastMove(firstMove);
     setBoard(init(firstMove));
     setScore(0);
+    setGameIsActive(true);
     const totalGames = numGames + 1;
     setNumGames(totalGames);
     setAvgScore(totalScore/totalGames);
@@ -165,7 +265,7 @@ const App = (props) => {
   }
 
   return (
-    <div className="App">
+    <div className={`App ${gameIsActive ? 'active' : 'gameOver'}`}>
       <div className="left">
         <div className="controls">
           <div>
@@ -173,10 +273,14 @@ const App = (props) => {
             </div>
           <div><button>Buy Safe Move</button> -50pts</div>
           <div>Score: {score}</div>
-          {message && (<div>{message}</div>)}
+          {messages && (<div>{ messages.map((m,i) => (
+              <div className={messages.length - i > 10 ? 'hiddenMessage' : ''}>{i+1}. {m}</div>
+            ))
+          }</div>
+        )}
         </div>
       </div>
-      { renderBoard(board, updateBoard, isValid, updateScores, updateMessage) }
+      { renderBoard(board, isValid, HandleValidBounce) }
       <div className="right">
         <div className="controls">
           <div>Num Skulls: 65</div>
