@@ -144,17 +144,17 @@ const renderBoard = (board, isValid, handleValidBounce) => {
   return (
     <div className="board">
     { board.map((row, i) => {
-        return row.map((cell, j) => {
-          const type = board[i][j].state;
-          const score = board[i][j].score;
+        return row.map((square, j) => {
+          const type = square.state;
+          const score = square.score;
           const key = "cell-" + i + "x" + j;
-          const validSpace = isValid(i,j, type);
+          const validSpace = isValid(square);
           return (
             <div key={key}
                  className={`cell ${type} c${i}-${j} ${validSpace ? 'neighbor' : ''}`}
                  onClick={(e) => {
                    if (validSpace) {
-                     handleValidBounce(i,j,type);
+                     handleValidBounce(square);
                    }
                  }}
             >{score && <div className="bonusScore">+{score}</div>}</div>
@@ -195,9 +195,9 @@ const App = (props) => {
   const [playOgre, exposedOgreData] = useSound(ogre, basicSoundControls);
   const [playFail] = useSound(fail, basicSoundControls);
 
-  const scoreBonus = (row,col) => {
+  const scoreBonus = (square) => {
     const tuple = [];
-    const points = board[row][col].score;
+    const points = square.score;
     tuple[0] = points;
     if (points) {
       tuple[1] = `+${points} points for reaching corner square`;
@@ -205,8 +205,10 @@ const App = (props) => {
     return tuple;
   }
 
-  const getNeighbors = (row, col) => {
+  const getNeighbors = (square) => {
     const neighbors = [];
+    const row = square.row;
+    const col = square.col;
     const above = Math.max(0,row-1);
     const below = Math.min(boardSize-1,row+1);
     const left = Math.max(0,col-1);
@@ -222,8 +224,8 @@ const App = (props) => {
     return neighbors;
   }
 
-  const isBoxedIn = (row, col) => {
-    const neighbors = getNeighbors(row,col);
+  const isBoxedIn = (square) => {
+    const neighbors = getNeighbors(square);
     console.log(neighbors.map(n=>n.state));
     let isBoxedIn = true;
     neighbors.forEach((neighbor, i) => {
@@ -235,13 +237,13 @@ const App = (props) => {
     return isBoxedIn;
   }
 
-  const handleValidBounce =  (row, col, type) => {
+  const handleValidBounce =  (square) => {
     let soundHook = playBounce;
-    const [bonus, bonusMessage] = scoreBonus(row,col);
-    switch(type) {
+    const [bonus, bonusMessage] = scoreBonus(square);
+    switch(square.state) {
       case 'potentialBoom':
         playRelief();
-        handleSuccessfulMove(row, col, type, bonus, bonusMessage);
+        handleSuccessfulMove(square, bonus, bonusMessage);
         break;
       case 'actualBoom':
         playBoom();
@@ -249,7 +251,7 @@ const App = (props) => {
         setGameIsActive(false);
         break;
       case 'open':
-        if (isBoxedIn(row, col)) {
+        if (isBoxedIn(square)) {
           updateMessage("Boxed in! GAME OVER");
           setGameIsActive(false);
         } else {
@@ -259,53 +261,53 @@ const App = (props) => {
             points = bonus;
             msg = bonusMessage;
           }
-          handleSuccessfulMove(row, col, type, points, msg);
+          handleSuccessfulMove(square, points, msg);
         }
         break;
       case 'monster':
-        handleMonster(row, col, type);
+        handleMonster(square);
         break;
       case 'monster2':
-        handleMonster(row, col, type);
+        handleMonster(square);
         break;
       case 'monster3':
-        handleMonster(row, col, type);
+        handleMonster(square);
         break;
       default:
         // code block
     }
   }
 
-  const handleSuccessfulMove = (row, col, type, points, message) => {
-    const newBoard = update(board, row, col);
-    const msg = message || `${row}x${col}: ${type}`;
+  const handleSuccessfulMove = (square, points, message) => {
+    const newBoard = update(board, square.row, square.col);
+    const msg = message || `${square.row}x${square.col}: ${square.state}`;
     updateMessage(msg);
     updateScores(points || 10);
-    updateBoard(newBoard, [row,col]);
+    updateBoard(newBoard, [square.row,square.col]);
     playBounce();
     setPlaybackRateBounce(playbackRateBounce + 0.01);
   }
 
-  const handleMonster = (row, col, type) => {
+  const handleMonster = (square) => {
     if (random(0,1000) >= 900) {
       playVictory();
-      const msgs = [`Won the battle against ${monsterMap[type]} and gained 50 points for killing monster.`];
+      const msgs = [`Won the battle against ${monsterMap[square.state]} and gained 50 points for killing monster.`];
       let points = 50;
-      const [bonusPoints, bonusMessage] = scoreBonus(row, col);
+      const [bonusPoints, bonusMessage] = scoreBonus(square);
       if (bonusPoints) {
         points += bonusPoints
         msgs.push(bonusMessage);
       }
       //send monster home
-      if (lastMove[0] != monsterMap[type].homeRow) {
-        board[monsterMap[type].homeRow][monsterMap[type].homeCol].state = type;
+      if (lastMove[0] != monsterMap[square.state].homeRow) {
+        board[monsterMap[square.state].homeRow][monsterMap[square.state].homeCol].state = square.type;
       } else{
-        board[0][0].state = type;
+        board[0][0].state = square.state;
       }
-      handleSuccessfulMove(row, col, type, 50, msgs);
+      handleSuccessfulMove(square, 50, msgs);
     } else {
       playFail();
-      updateMessage([`In battle with ${monsterMap[type].icon}.`,
+      updateMessage([`In battle with ${monsterMap[square.state].icon}.`,
                      'Eighty percent chance of winning the battle but lost.',
                      'GAME OVER']);
       setGameIsActive(false);
@@ -335,8 +337,10 @@ const App = (props) => {
     setLastMove(lastMove);
   }
 
-  const isValid = (row,col,type) => {
-    return gameIsActive && !['blocked','beenThere','lastMove'].includes(type) &&
+  const isValid = (square) => {
+    const row = square.row;
+    const col = square.col;
+    return gameIsActive && !['blocked','beenThere','lastMove'].includes(square.state) &&
            [row-1,row,row+1].includes(lastMove[0]) &&
            [col-1,col,col+1].includes(lastMove[1]);
   }
