@@ -3,14 +3,14 @@ import useSound from 'use-sound';
 import bounce from './sounds/bounce.mp3';
 import relief from './sounds/relief.mp3';
 import boom from './sounds/boom.mp3';
-import victory from './sounds/fanfare.mp3';
+import victory from './sounds/crunch.mp3';
 import ogre from './sounds/ogre.mp3';
 import demon from './sounds/demon.mp3';
 import dragon from './sounds/dragon.mp3';
-import fail from './sounds/fail.mp3';
-
-
+import fail from './sounds/fail2.mp3';
 import './App.css';
+
+// -------------- CONSTANTS -----------------
 
 const states = ['beenThere',
                 'open',
@@ -26,17 +26,17 @@ const boardSize = 20;
 
 const monsterMap = { monster:
                       { icon: '🐲',
-                        homeRow: 20,
-                        homwCol: 20
+                        homeRow: boardSize-1,
+                        homeCol: boardSize-1
                       },
                      monster2:
                        { icon: '👺',
-                         homeRow: 20,
+                         homeRow: boardSize-1,
                          homeCol: 0 },
                      monster3:
                        { icon: '👹',
                          homeRow: 0,
-                         homeCol: 20
+                         homeCol: boardSize-1
                        }
                     }
 
@@ -45,54 +45,115 @@ const bonusPoints = (function() {
                const max = boardSize - 1;
                x[0] = [];
                x[max] = [];
-               x[0][0] = 250;
                x[max][max] = 250;
                x[0][max] = 150;
                x[max][0] = 150;
                return x;
            })();
 
-const shuffle = (array) => {
-  array.sort(() => Math.random() - 0.5);
-  return array;
-}
-
-function useInterval(callback, delay) {
-  const intervalId = React.useRef(null);
-  const savedCallback = React.useRef(callback);
-  React.useEffect(() => {
-    savedCallback.current = callback;
-  });
-  React.useEffect(() => {
-    const tick = () => savedCallback.current();
-    if (typeof delay === 'number') {
-      intervalId.current = window.setInterval(tick, delay);
-      return () => window.clearInterval(intervalId.current);
-    }
-  }, [delay]);
-  return intervalId.current;
-};
+// -------------- UTILS ---------------
+ const shuffle = (array) => {
+   array.sort(() => Math.random() - 0.5);
+   return array;
+ }
 
 const random = (min, max) =>
-  Math.floor(Math.random() * (max - min)) + min;
+   Math.floor(Math.random() * (max - min)) + min;
 
-const update = (board, row, col) => {
-  for (let i = 0; i < board.length; i++) {
-    for (let j = 0; j < board[i].length; j++) {
-      const state = board[i][j].state;
-      if (i === row && j === col) {
-        board[i][j].state = 'lastMove';
-      } else if (state === 'lastMove') {
-        board[i][j].state = 'beenThere';
+const sprinkleLiberally = (board, num, from, to) => {
+  while (num > 0) {
+    const row = random(0,boardSize);
+    const col = random(0,boardSize);
+    const candidate = board[row][col]
+    if (candidate.state == from) {
+        candidate.state = to;
+        num--;
+    }
+  }
+}
+
+const getInventory = (board) => {
+  const inventory = {};
+  for (let row = 0; row < board.length; row++) {
+    for (let col = 0; col < board[row].length; col++) {
+      const square = board[row][col];
+      if (inventory[square.state]) {
+        inventory[square.state] += 1;
+      } else {
+        inventory[square.state] = 1;
       }
     }
   }
-  return board;
+  return inventory;
 }
 
-const getRandomCell = () => {
-  return  [Math.floor(Math.random()*boardSize),
-           Math.floor(Math.random()*boardSize)];
+// -------------- BOARD LOGIC ---------------
+
+const reterraform = (board, handleBunnyDeath, messageBufferer) => {
+  let numberBeenThere = 0;
+  let lastMove = null;
+  const monsters = [];
+  board.forEach((row) => {
+    row.forEach((square) => {
+      if (['blocked','potentialBoom','actualBoom'].includes(square.state)) {
+        square.state = 'open';
+      } else if (square.state === 'beenThere') {
+        numberBeenThere++;
+      } else if (square.state === 'lastMove') {
+        lastMove = square;
+      } else if (square.state.startsWith('monster')) {
+        monsters.push(square);
+      }
+    });
+  });
+
+  let block = (boardSize*boardSize - numberBeenThere) / 2;
+  sprinkleLiberally(board, block, 'open', 'blocked');
+
+  let potentialBoom = (boardSize*boardSize - numberBeenThere) / 6;
+  for (let i = 0; i < potentialBoom; i++) {
+    let boom = 'potentialBoom';
+    if (random(0,1000) <= 200) {
+      boom = 'actualBoom';
+    }
+    sprinkleLiberally(board, 1, 'open', boom);
+  }
+
+  const warningMessages = ["BEWARE! Monster nearby - 80% chance of winning battle with monster.",
+                           "BEWARE! Monster two squares away!"];
+  const warnings = [];
+  monsters.forEach(monster => {
+    const monsterName = monster.state
+    const currentDistance = distanceToBunny(monster, lastMove);
+    const monsterNeighbors = getNeighbors(monster, board);
+    const bunny = monsterNeighbors.filter(n => n.state == 'lastMove');
+    if (bunny.length > 0) {
+      messageBufferer("Blown up by monster");
+      handleBunnyDeath();
+      return;
+    }
+    const openSquares = monsterNeighbors.filter(n => n.state == 'open');
+    let closest = currentDistance;
+    let candidateMove = null;
+    openSquares.forEach(o => {
+      const distanceFromNeighbor = distanceToBunny(o, lastMove);
+      if (distanceFromNeighbor < closest) {
+        candidateMove = o;
+        closest = distanceFromNeighbor;
+      }
+    });
+
+    if (candidateMove) {
+      candidateMove.state = monster.state;
+      monster.state = 'blocked';
+    }
+
+    if (closest <= warningMessages.length) {
+      warnings.push(warningMessages[closest-1]);
+    }
+  });
+  messageBufferer(warnings);
+  return board;
 }
 
 const init = (firstMove) => {
@@ -105,23 +166,55 @@ const init = (firstMove) => {
       if (edges.includes(i) && edges.includes(j)) {
         board[i][j]['score'] = bonusPoints[i][j];
       }
-      if (Math.random()*100 < 40) {
-        const boomType = Math.random()*100 < 50 ? 'actual' : 'potential';
-          board[i][j].state = `${boomType}Boom`;
-      } else if (Math.random()*100 < 20) {
-          board[i][j].state = 'blocked';
-      }
     }
   }
   let [row,col] = firstMove;
   board[row][col].state = 'lastMove';
-  const [row1,row2,row3] = shuffle([...Array(10).keys()].filter((n) => n != row)).slice(0,3);
-  const [col1,col2,col3] = shuffle([...Array(10).keys()].filter((n) => n != col)).slice(0,3);
-  board[row1][col1].state = 'monster';
-  board[row2][col3].state = 'monster2';
-  board[row3][col3].state = 'monster3';
+
+  const monsters = Object.keys(monsterMap);
+  monsters.forEach((key) => {
+    const monster = monsterMap[key];
+    board[monster.homeRow][monster.homeCol].state = key;
+  })
+
   return board;
 }
+
+const distanceToBunny = (square, bunnySquare) => {
+  let distance = 0;
+  let pos = [square.row, square.col];
+  const bunny = [bunnySquare.row, bunnySquare.col];
+  let counter = 0;
+  while (!(pos[0] == bunnySquare.row && pos[1] == bunnySquare.col)) {
+    [0,1].forEach((direction) => {
+      const distanceAway = bunny[direction] - pos[direction];
+      pos[direction] = pos[direction] + distanceAway/Math.max(1,Math.abs(distanceAway));
+    })
+    distance++;
+  }
+  return distance;
+}
+
+const getNeighbors = (square, board) => {
+  const neighbors = [];
+  const row = square.row;
+  const col = square.col;
+  const above = Math.max(0,row-1);
+  const below = Math.min(boardSize-1,row+1);
+  const left = Math.max(0,col-1);
+  const right = Math.min(boardSize-1,col+1);
+  for (let i = above; i <= below; i++) {
+    for (let j = left; j <= right; j++) {
+      if (i == row && j == col) {
+        continue;
+      }
+      neighbors.push(board[i][j]);
+    }
+  }
+  return neighbors;
+}
+
+// -------------- PAGE ELEMENTS ---------------
 
 const renderKey = () => {
   return (
@@ -166,6 +259,8 @@ const renderBoard = (board, isValid, handleValidBounce) => {
   )
 }
 
+// --- STATE MGMT & LUDICROUS CALLBACKS  ---
+
 const App = (props) => {
   const [gameIsActive, setGameIsActive] = useState(true);
   const [score, setScore] = useState(0);
@@ -174,7 +269,7 @@ const App = (props) => {
   const [avgScore, setAvgScore] = useState(0);
   const [numGames, setNumGames] = useState(0);
   const [messages, setMessages] = useState([]);
-  const [lastMove, setLastMove] = useState(() => getRandomCell());
+  const [lastMove, setLastMove] = useState([0,0]);
   const [board, setBoard] = useState(() => {
     return init(lastMove);
   });
@@ -205,28 +300,8 @@ const App = (props) => {
     return tuple;
   }
 
-  const getNeighbors = (square) => {
-    const neighbors = [];
-    const row = square.row;
-    const col = square.col;
-    const above = Math.max(0,row-1);
-    const below = Math.min(boardSize-1,row+1);
-    const left = Math.max(0,col-1);
-    const right = Math.min(boardSize-1,col+1);
-    for (let i = above; i <= below; i++) {
-      for (let j = left; j <= right; j++) {
-        if (i == row && j == col) {
-          continue;
-        }
-        neighbors.push(board[i][j]);
-      }
-    }
-    return neighbors;
-  }
-
   const isBoxedIn = (square) => {
-    const neighbors = getNeighbors(square);
-    console.log(neighbors.map(n=>n.state));
+    const neighbors = getNeighbors(square, board);
     let isBoxedIn = true;
     neighbors.forEach((neighbor, i) => {
       if (!isBoxedIn) {
@@ -251,18 +326,13 @@ const App = (props) => {
         setGameIsActive(false);
         break;
       case 'open':
-        if (isBoxedIn(square)) {
-          updateMessage("Boxed in! GAME OVER");
-          setGameIsActive(false);
-        } else {
-          let msg = "+10 points for reaching a safe square."
-          let points = 10;
-          if (bonus) {
-            points = bonus;
-            msg = bonusMessage;
-          }
-          handleSuccessfulMove(square, points, msg);
+        let msg = "+10 points for reaching a safe square."
+        let points = 10;
+        if (bonus) {
+          points = bonus;
+          msg = bonusMessage;
         }
+        handleSuccessfulMove(square, points, msg);
         break;
       case 'monster':
         handleMonster(square);
@@ -279,19 +349,37 @@ const App = (props) => {
   }
 
   const handleSuccessfulMove = (square, points, message) => {
-    const newBoard = update(board, square.row, square.col);
     const msg = message || `${square.row}x${square.col}: ${square.state}`;
-    updateMessage(msg);
+    let messageBuffer = [msg];
+
     updateScores(points || 10);
-    updateBoard(newBoard, [square.row,square.col]);
+
+    const [row,col] = lastMove;
+    board[row][col].state = 'beenThere';
+    square.state = 'lastMove';
+
+    setLastMove([square.row,square.col]);
     playBounce();
     setPlaybackRateBounce(playbackRateBounce + 0.01);
+
+
+    setBoard(reterraform(board, handleBunnyDeath, (msg) => { messageBuffer = messageBuffer.concat(msg); }));
+    console.log(`2 ${messageBuffer}`);
+    if (isBoxedIn(square)) {
+      messageBuffer.push("No legal squares to move to.  BLOCKED!  Game over.");
+      setGameIsActive(false);
+    }
+    updateMessage(messageBuffer);
+  }
+
+  const handleBunnyDeath = () => {
+    setGameIsActive(false);
   }
 
   const handleMonster = (square) => {
-    if (random(0,1000) >= 900) {
+    if (random(0,1000) >= 200) {
       playVictory();
-      const msgs = [`Won the battle against ${monsterMap[square.state]} and gained 50 points for killing monster.`];
+      const msgs = [`Won the battle against ${monsterMap[square.state].icon} and gained 50 points for killing monster.`];
       let points = 50;
       const [bonusPoints, bonusMessage] = scoreBonus(square);
       if (bonusPoints) {
@@ -299,8 +387,10 @@ const App = (props) => {
         msgs.push(bonusMessage);
       }
       //send monster home
+      const monster = square.state
       if (lastMove[0] != monsterMap[square.state].homeRow) {
-        board[monsterMap[square.state].homeRow][monsterMap[square.state].homeCol].state = square.type;
+        const monsterData = monsterMap[monster];
+        board[monsterData.homeRow][monsterData.homeCol].state = square.state;
       } else{
         board[0][0].state = square.state;
       }
@@ -322,6 +412,9 @@ const App = (props) => {
   }
 
   const updateMessage = (newMsg) => {
+    console.log( `updating message? ${newMsg}`);
+    console.log(messages);
+    console.log(messages.concat(newMsg));
     setMessages(messages.concat(newMsg));
   }
 
@@ -330,11 +423,6 @@ const App = (props) => {
     setTotalScore(0);
     setAvgScore(0);
     setNumGames(0);
-  }
-
-  const updateBoard = (board, lastMove) => {
-    setBoard(board);
-    setLastMove(lastMove);
   }
 
   const isValid = (square) => {
@@ -346,7 +434,7 @@ const App = (props) => {
   }
 
   const handleStartOver = () => {
-    const firstMove = getRandomCell()
+    const firstMove = [0,0];
     setLastMove(firstMove);
     setBoard(init(firstMove));
     setScore(0);
@@ -355,9 +443,16 @@ const App = (props) => {
     const totalGames = numGames + 1;
     setNumGames(totalGames);
     setAvgScore(totalScore/totalGames);
-
   }
 
+  const inventory = getInventory(board);
+  const potentialBoom = inventory['potentialBoom'] || 0;
+  const numActualBooms = inventory['actualBoom'] || 0;
+  const numSkulls = potentialBoom + numActualBooms;
+  let percentBoom = 0;
+  if (numSkulls > 0) {
+    percentBoom = Number.parseFloat(numActualBooms/numSkulls).toFixed(2);
+  }
   return (
     <div className={`App ${gameIsActive ? 'active' : 'gameOver'}`}>
       <div className="left">
@@ -377,9 +472,9 @@ const App = (props) => {
       { renderBoard(board, isValid, handleValidBounce) }
       <div className="right">
         <div className="controls">
-          <div>Num Skulls: 65</div>
-          <div>Num Bombs: 10</div>
-          <div>Possibilty of Bomb: 25%</div>
+          <div>Num Skulls: {numSkulls}</div>
+          <div>Num Bombs: {numActualBooms}</div>
+          <div>Possibilty of Bomb: {percentBoom*100}%</div>
           <div>Best Score: {maxScore}</div>
           <div>Average Score: {Math.round(avgScore,2)}</div>
           <div><button onClick={resetStats}>Reset stats</button></div>

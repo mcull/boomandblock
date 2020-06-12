@@ -70,6 +70,7 @@
 
 .beenThere {
   background-color: rgba(49, 79, 79,.7);
+  transition: background-color 2.5s ease;
 }
 
 .open {
@@ -93,7 +94,8 @@
   content: '☠️';
 }
 .actualBoom::before {
-  content: '💣';
+  content: '☠️';
+  //content: '💣';
 }
 
 .monster,
