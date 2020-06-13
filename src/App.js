@@ -31,7 +31,7 @@ const monsterMap = { monster:
                       },
                      monster2:
                        { icon: '👺',
-                         homeRow: boardSize-1,
+                         homeRow: 2, //boardSize-1,
                          homeCol: 0 },
                      monster3:
                        { icon: '👹',
@@ -128,9 +128,14 @@ const reterraform = (board, handleBunnyDeath, messageBufferer) => {
     const monsterNeighbors = getNeighbors(monster, board);
     const bunny = monsterNeighbors.filter(n => n.state == 'lastMove');
     if (bunny.length > 0) {
+      const bunnySquare = bunny[0];
+      board[bunnySquare.row][bunnySquare.col].state = monsterName;
+      board[monster.row][monster.col].state = 'blocked'
+
+
       messageBufferer("Blown up by monster");
       handleBunnyDeath();
-      return;
+      return board;
     }
     const openSquares = monsterNeighbors.filter(n => n.state == 'open');
     let closest = currentDistance;
@@ -364,8 +369,7 @@ const App = (props) => {
 
 
     setBoard(reterraform(board, handleBunnyDeath, (msg) => { messageBuffer = messageBuffer.concat(msg); }));
-    console.log(`2 ${messageBuffer}`);
-    if (isBoxedIn(square)) {
+    if (gameIsActive && isBoxedIn(square)) {
       messageBuffer.push("No legal squares to move to.  BLOCKED!  Game over.");
       setGameIsActive(false);
     }
@@ -374,6 +378,8 @@ const App = (props) => {
 
   const handleBunnyDeath = () => {
     setGameIsActive(false);
+    playFail();
+
   }
 
   const handleMonster = (square) => {
