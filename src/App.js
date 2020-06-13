@@ -317,6 +317,11 @@ const App = (props) => {
     return isBoxedIn;
   }
 
+  const updateLastMoveToBeenThere = () => {
+    const [row,col] = lastMove;
+    board[row][col].state = 'beenThere';
+  }
+
   const handleValidBounce =  (square) => {
     let soundHook = playBounce;
     const [bonus, bonusMessage] = scoreBonus(square);
@@ -359,8 +364,7 @@ const App = (props) => {
 
     updateScores(points || 10);
 
-    const [row,col] = lastMove;
-    board[row][col].state = 'beenThere';
+    updateLastMoveToBeenThere();
     square.state = 'lastMove';
 
     setLastMove([square.row,square.col]);
@@ -383,7 +387,7 @@ const App = (props) => {
   }
 
   const handleMonster = (square) => {
-    if (random(0,1000) >= 200) {
+    if (random(0,1000) >= 1200) {
       playVictory();
       const msgs = [`Won the battle against ${monsterMap[square.state].icon} and gained 50 points for killing monster.`];
       let points = 50;
@@ -407,6 +411,7 @@ const App = (props) => {
                      'Eighty percent chance of winning the battle but lost.',
                      'GAME OVER']);
       setGameIsActive(false);
+      updateLastMoveToBeenThere();
     }
   }
 
