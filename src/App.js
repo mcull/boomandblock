@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import useSound from 'use-sound';
+import ls from 'local-storage'
 import bounce from './sounds/bounce.mp3';
 import relief from './sounds/relief.mp3';
 import boom from './sounds/boom.mp3';
@@ -31,7 +32,7 @@ const monsterMap = { monster:
                       },
                      monster2:
                        { icon: '👺',
-                         homeRow: 2, //boardSize-1,
+                         homeRow: boardSize-1,
                          homeCol: 0 },
                      monster3:
                        { icon: '👹',
@@ -72,19 +73,17 @@ const sprinkleLiberally = (board, num, from, to) => {
   }
 }
 
-const getInventory = (board) => {
-  const inventory = {};
-  for (let row = 0; row < board.length; row++) {
-    for (let col = 0; col < board[row].length; col++) {
-      const square = board[row][col];
-      if (inventory[square.state]) {
-        inventory[square.state] += 1;
-      } else {
-        inventory[square.state] = 1;
-      }
-    }
-  }
-  return inventory;
+function useStickyState(defaultValue, key) {
+  const [value, setValue] = React.useState(() => {
+    const stickyValue = window.localStorage.getItem(key);
+    return stickyValue !== null
+      ? JSON.parse(stickyValue)
+      : defaultValue;
+  });
+  React.useEffect(() => {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
+  return [value, setValue];
 }
 
 // -------------- BOARD LOGIC ---------------
@@ -219,6 +218,21 @@ const getNeighbors = (square, board) => {
   return neighbors;
 }
 
+const getInventory = (board) => {
+  const inventory = {};
+  for (let row = 0; row < board.length; row++) {
+    for (let col = 0; col < board[row].length; col++) {
+      const square = board[row][col];
+      if (inventory[square.state]) {
+        inventory[square.state] += 1;
+      } else {
+        inventory[square.state] = 1;
+      }
+    }
+  }
+  return inventory;
+}
+
 // -------------- PAGE ELEMENTS ---------------
 
 const renderKey = () => {
@@ -269,9 +283,9 @@ const renderBoard = (board, isValid, handleValidBounce) => {
 const App = (props) => {
   const [gameIsActive, setGameIsActive] = useState(true);
   const [score, setScore] = useState(0);
-  const [maxScore, setMaxScore] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
-  const [avgScore, setAvgScore] = useState(0);
+  const [maxScore, setMaxScore] = useStickyState(0, "maxScore")
+  const [avgScore, setAvgScore] = useStickyState(0, "avgScore");
   const [numGames, setNumGames] = useState(0);
   const [messages, setMessages] = useState([]);
   const [lastMove, setLastMove] = useState([0,0]);
@@ -332,6 +346,8 @@ const App = (props) => {
         break;
       case 'actualBoom':
         playBoom();
+        updateLastMoveToBeenThere();
+        //setBoard(board);
         updateMessage("Blown up by bomb. GAME OVER");
         setGameIsActive(false);
         break;
@@ -387,7 +403,7 @@ const App = (props) => {
   }
 
   const handleMonster = (square) => {
-    if (random(0,1000) >= 1200) {
+    if (random(0,1000) >= 200) {
       playVictory();
       const msgs = [`Won the battle against ${monsterMap[square.state].icon} and gained 50 points for killing monster.`];
       let points = 50;
@@ -485,7 +501,7 @@ const App = (props) => {
         <div className="controls">
           <div>Num Skulls: {numSkulls}</div>
           <div>Num Bombs: {numActualBooms}</div>
-          <div>Possibilty of Bomb: {percentBoom*100}%</div>
+          <div>Possibilty of Bomb: {Math.floor(percentBoom*100)}%</div>
           <div>Best Score: {maxScore}</div>
           <div>Average Score: {Math.round(avgScore,2)}</div>
           <div><button onClick={resetStats}>Reset stats</button></div>
