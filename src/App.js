@@ -35,7 +35,7 @@ const monsterMap = { monster:
                       },
                      monster2:
                        { icon: '👺',
-                         homeRow: 0, //boardSize-1,
+                         homeRow: boardSize-1,
                          homeCol: 0 },
                      monster3:
                        { icon: '👹',
@@ -343,7 +343,7 @@ const App = (props) => {
   const [avgScore, setAvgScore] = useStickyState(0, "avgScore");
   const [numGames, setNumGames] = useState(0);
   const [messages, setMessages] = useState([]);
-  const [lastMove, setLastMove] = useState([18,2]);
+  const [lastMove, setLastMove] = useState([0,0]);
   const [counter, setCounter] = useState(0)
   const [priceOfSafety, setPriceOfSafety] = useState(0);
   const [safeHop, setSafeHop] = useState(false);
