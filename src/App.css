@@ -1,8 +1,75 @@
-@import url('https://fonts.googleapis.com/css2?family=Bungee+Inline&family=Open+Sans&family=Poiret+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rye&family=Bungee+Inline&family=Open+Sans&family=Poiret+One&display=swap');
 
 .score {
   font-family: 'Bungee Inline', sans-serif;
   font-size: 5vh;
+}
+
+.speech-bubble {
+	position: relative;
+	background: #daf396;
+	border-radius: 1em;
+  font-size: 2.5vh;
+  padding: 2vh;
+}
+
+.speech-bubble:after {
+	content: '';
+	position: absolute;
+	right: 0;
+	top: 50%;
+	width: 0;
+	height: 0;
+	border: 20px solid transparent;
+	border-left-color: #daf396;
+	border-right: 0;
+	border-bottom: 0;
+	margin-top: -10px;
+	margin-right: -20px;
+}
+
+.startOver {
+  width: 100%;
+  height: 9vh;
+  font-size: 4vh;
+  font-weight: bold;
+  font-family: 'Open Sans';
+  color: #999999;
+  cursor:pointer;
+}
+
+.safeHavenButtons {
+  text-align: center;
+
+}
+
+.safeHavenPurchase {
+  display: inline-block;
+  margin: 10px;
+}
+
+.safeHavenPurchase button {
+  font-size: 4vh;
+  cursor: pointer;
+}
+
+.pointPrice {
+  font-size: 2vh;
+  text-align: center;
+  margin: 0 auto;
+}
+
+.salesPitch {
+  font-weight: bold;
+  font-family: 'Open Sans';
+  text-align: center;
+}
+
+.smallPrint {
+  font-size: 2vh;
+  color: #999999;
+  font-family: 'Open Sans';
+  text-align: center;
 }
 
 .messages {
@@ -10,7 +77,37 @@
   font-size: 3vh;
 }
 .message {
-  font-size: 2.5vh;
+
+}
+
+.stats {
+  background-color: #E3F2FD;
+  font-size: 2vh;
+  padding: 10px;
+  width:80%;
+  height: 200px;
+  border-radius: 150px;
+}
+
+.statsHeader {
+  font-weight: bold;
+  font-family: 'Open Sans';
+  text-align: center;
+  font-size: 4vh;
+}
+
+.resetStats {
+  text-align: right;
+  background-color:
+}
+
+.resetStatsButton {
+  width: 8vw;
+  height: 4vw;
+  margin: 0 auto;
+  background-color: #FFECB3;
+  cursor:pointer;
+  border: 2px dashed WHITE;
 }
 
 .gameOver .board {
@@ -27,7 +124,7 @@
 
 .App {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) 4fr minmax(150px, 1fr);
+  grid-template-columns: minmax(150px, 1fr) 4fr minmax(250px, 1fr);
   margin-top: 5vh;
 
 }
@@ -88,6 +185,15 @@
   transition: background-color 2.5s ease;
 }
 
+.green {
+  color: OLIVEDRAB;
+  font-weight: bold;
+}
+
+.red {
+  color: FIREBRICK;
+}
+
 .open {
   background-color: OLIVEDRAB;
 }
@@ -142,9 +248,14 @@
 }
 
 .bonusScore {
+  font-family: 'Poiret One', sans-serif;
   font-size: 10px;
   position: absolute;
   font-weight: normal;
+  font-size: 2.5vh;
+  //background-color: rgba(255, 238, 88,0.3);
+  //border-radius: 20px;
+  width:20px;
 }
 
 .neighbor {
@@ -152,23 +263,14 @@
 }
 
 .c0-19 .bonusScore {
-  //background-color: rgba(255,255,255,.4);
-  top: -15px;
-  //right: -15px;
-  //transform: rotate(45deg);
+  top: -20px;
 }
 
 .c19-0 .bonusScore {
-  bottom: -15px;
-  //left: -15px;
-  //transform: rotate(45deg);
+  bottom: -20px;
+  left: -10px;
 }
 
-.c0-0 .bonusScore {
-  top: -15px;
-  //left: -20px;
-  //transform: rotate(-45deg);
-}
 .c19-19 .bonusScore {
- bottom: -15px;
+ bottom: -20px;
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import CountUp from 'react-countup';
 import useSound from 'use-sound';
+
+
 import ls from 'local-storage'
 import bounce from './sounds/bounce.mp3';
 import relief from './sounds/relief.mp3';
@@ -11,10 +12,9 @@ import demon from './sounds/demon.mp3';
 import dragon from './sounds/dragon.mp3';
 import fail from './sounds/fail2.mp3';
 import './App.css';
-
+import ordinal from 'ordinal'
 // -------------- CONSTANTS -----------------
 
-const NUMERIC = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 const states = ['beenThere',
                 'open',
                 'blocked',
@@ -63,8 +63,6 @@ const bonusPoints = (function() {
  }
 
  const leftPad = (str, char, desiredLen) => {
-   console.log(str);
-   console.log(char);
    if (str && char) {
      while (str.length < desiredLen) {
        str = char + str;
@@ -103,7 +101,7 @@ function useStickyState(defaultValue, key) {
 
 // -------------- BOARD LOGIC ---------------
 
-const reterraform = (board, handleBunnyDeath, messageBufferer) => {
+const reterraform = (board, handleBunnyDeath, messageBufferer, monsterSounds) => {
   let numberBeenThere = 0;
   let lastMove = null;
   const monsters = [];
@@ -143,6 +141,11 @@ const reterraform = (board, handleBunnyDeath, messageBufferer) => {
   //move monsters
   monsters.forEach(monster => {
     const monsterName = monster.state
+    const monsterData = monsterMap[monsterName];
+    if (monsterData.status == 'inTimeOut') {
+      monsterData.status = null;
+      return;
+    }
     const currentDistance = distanceToBunny(monster, lastMove);
     const monsterNeighbors = Object.values(getNeighbors(monster, board));
     const bunny = monsterNeighbors.filter(n => n.state == 'lastMove');
@@ -166,14 +169,19 @@ const reterraform = (board, handleBunnyDeath, messageBufferer) => {
       }
     });
 
+    if (closest <= warningMessages.length) {
+      monsterSounds[monster.state]();
+      console.log(monsterSounds);
+      console.log(monsterName);
+      warnings.push(warningMessages[closest-1]);
+    }
+
     if (candidateMove) {
       candidateMove.state = monster.state;
       monster.state = 'blocked';
     }
 
-    if (closest <= warningMessages.length) {
-      warnings.push(warningMessages[closest-1]);
-    }
+
   });
   messageBufferer(warnings);
   return board;
@@ -299,6 +307,33 @@ const renderBoard = (board, isValid, handleValidBounce) => {
   )
 }
 
+const renderMessages = (messages, moveNum, gameIsActive, handleStartOver) => {
+  if (moveNum == 0) {
+    return (<div className="instructions">
+      <p>Hop around on the <span className="green">green</span> squares.</p>
+      <p>Avoid the monsters.  They're coming after you!</p>
+      <p>Or eat them. 🍿</p>
+      <p>+50 points when you battle a monster and win.</p>
+      <p>You can also hop on ☠️ squares.  You may have to.</p>
+      <p>Some of them have 💣s under them, but some are safe.</p>
+      <p>Good luck!</p>
+    </div>);
+  }
+  if (!messages || messages.length == 0) {
+    return null;
+  }
+  return (
+    <div className="messages">
+      <div className="messagesHeading">{ordinal(moveNum)} move...</div>
+    { [].concat(messages).map((m) => (
+      <div className='message speech-bubble'>{m}</div>
+    ))
+    }
+    {!gameIsActive && (<div><button class="startOver" onClick={()=>handleStartOver()}>Start Over</button></div>)}
+    </div>
+  );
+}
+
 // --- STATE MGMT & LUDICROUS CALLBACKS  ---
 
 const App = (props) => {
@@ -310,6 +345,7 @@ const App = (props) => {
   const [numGames, setNumGames] = useState(0);
   const [messages, setMessages] = useState([]);
   const [lastMove, setLastMove] = useState([0,0]);
+  const [counter, setCounter] = useState(0)
   const [priceOfSafety, setPriceOfSafety] = useState(0);
   const [safeHop, setSafeHop] = useState(false);
   const [board, setBoard] = useState(() => {
@@ -355,7 +391,7 @@ const App = (props) => {
   }
 
   const handleValidBounce =  (square) => {
-    console.log(`handling valid bounce to [${square.row},${square.col}]`);
+    setCounter(counter+1);
     let messageBuffer = [];
     const messageBufferer = (msg) => { messageBuffer = messageBuffer.concat(msg); }
     // always bounce and get the reward
@@ -403,7 +439,7 @@ const App = (props) => {
 
   const handleSuccessfulMove = (square, messageBufferer) => {
     updateSquareToLastMove(square);
-    setBoard(reterraform(board, handleBunnyDeath, messageBufferer));
+    setBoard(reterraform(board, handleBunnyDeath, messageBufferer, {monster: playDemon, monster2: playDragon, monster3: playOgre}));
     if (gameIsActive && isBoxedIn(square)) {
       messageBufferer("No legal squares to move to.  BLOCKED!  Game over.");
       handleBunnyDeath();
@@ -425,11 +461,13 @@ const App = (props) => {
 
       //send monster home
       const monster = square.state
-      if (lastMove[0] != monsterMap[square.state].homeRow) {
+      const monsterData = monsterMap[square.state];
+      if (lastMove[0] != monsterData.homeRow && lastMove[1] != monsterData.homeCol) {
         const monsterData = monsterMap[monster];
         board[monsterData.homeRow][monsterData.homeCol].state = square.state;
+        monsterData['status'] = 'inTimeOut';
       } else{
-        board[0][0].state = square.state;
+        // goodbye forever, monster
       }
       handleSuccessfulMove(square, messageBufferer);
     } else {
@@ -450,7 +488,7 @@ const App = (props) => {
   }
 
   const updateMessage = (newMsg) => {
-    setMessages(messages.concat(newMsg));
+    setMessages(newMsg);
   }
 
   const resetStats = () => {
@@ -485,6 +523,7 @@ const App = (props) => {
     setNumGames(totalGames);
     setAvgScore(totalScore/totalGames);
     setPlaybackRateBounce(.95);
+    setCounter(0);
   }
 
   const handleBuyHop = (hops, price) => {
@@ -524,25 +563,34 @@ const App = (props) => {
     <div className={`App ${gameIsActive ? 'active' : 'gameOver'}`}>
       <div className="left">
         <div className="controls">
-          <div class="score">{leftPad(score.toString(), '0',4)}</div>
-          {messages && (<div className="messages">Game Log{ messages.map((m,i) => (
-              <div className={messages.length - i > 10 ? 'hiddenMessage' : 'message'}>{i+1}. {m}</div>
-            ))
-          }</div>
-        )}
+          <div className={`score ${score < 0 ? 'red' : ''}`}>{score >= 0 ? leftPad(score.toString(), '0',4) : score}</div>
+          { renderMessages(messages, counter, gameIsActive, handleStartOver) }
         </div>
       </div>
       { renderBoard(board, isValid, handleValidBounce) }
       <div className="right">
         <div className="controls">
-          <div><button onClick={()=>handleStartOver()}>Start Over</button></div>
-          <div><button onClick={()=>handleBuyHop(2,50)}>Buy Safe Move</button> -50pts</div>
-          <div>Num Skulls: {numSkulls}</div>
-          <div>Num Bombs: {numActualBooms}</div>
-          <div>Possibilty of Bomb: {Math.floor(percentBoom*100)}%</div>
-          <div>Best Score: {maxScore}</div>
-          <div>Average Score: {Math.round(avgScore,2)}</div>
-          <div><button onClick={resetStats}>Reset stats</button></div>
+          <div class="salesPitch">Buy a safe hop?</div>
+            <div class="smallPrint">Hop safely to one or two squares away.</div>
+          <div class="safeHavenButtons">
+            <div class="safeHavenPurchase">
+              <button onClick={()=>handleBuyHop(1,50)}>🐇</button>
+              <div class="pointPrice">-50pts</div>
+            </div>
+            <div class="safeHavenPurchase">
+              <button onClick={()=>handleBuyHop(2,75)}>🐇🐇</button>
+              <div class="pointPrice">-75pts</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="statsHeader">&middot; Stats &middot; </div>
+            <div><b>Num Skulls</b> {numSkulls}</div>
+            <div><b>Num Bombs</b> {numActualBooms}</div>
+            <div><b>Possibilty of Bomb</b> {Math.floor(percentBoom*100)}%</div>
+            <div><b>Best Score</b> {maxScore}</div>
+            <div><b>Average Score</b> {Math.round(avgScore,2)}</div>
+            <div className="resetStats"><button class="resetStatsButton" onClick={resetStats}>Reset stats</button></div>
+          </div>
         </div>
       </div>
     </div>
