@@ -568,7 +568,7 @@ const App = (props) => {
       </div>
       { renderBoard(board, isValid, handleValidBounce) }
       <div className="right">
-      <div class="title"><b>Boom and Blocked</b> <span style={{fontWeight:200}}>by Richard Wiener</span></div>
+      <div class="title"><b>Boom or Blocked</b><div style={{fontWeight:200}}>by Richard Wiener</div></div>
         <div className="controls">
           <div class="salesPitch">Buy a safe hop?</div>
             <div class="smallPrint">Hop safely to one or two squares away.</div>

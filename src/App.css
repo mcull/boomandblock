@@ -132,7 +132,7 @@
 .board{
   border: 20px white solid;
   outline: 2px #999999 solid;
-  border-radius: 10vh;
+  //border-radius: 10vh;
   display: grid;
   background-image: linear-gradient(to bottom right, CRIMSON, red, SILVER, green, OLIVEDRAB);
   grid-gap: 1px;
@@ -223,7 +223,6 @@
 .monster2,
 .monster3 {
     background-color: rgba(136, 14, 79,.9);
-    border-radius: 5px;
 }
 
 .monster::before {
@@ -278,9 +277,8 @@
 
 .title {
   width: 100%;
-  font-size: 4vh;
+  font-size: 3vh;
   text-align: center;
   margin-bottom:6vh;
-  color: #03A9F4;
-  font-family: 'Luckiest Guy', sans-serif;
+  color: #6D4C41;
 }
