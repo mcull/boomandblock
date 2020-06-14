@@ -1,3 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Bungee+Inline&family=Open+Sans&family=Poiret+One&display=swap');
+
+.score {
+  font-family: 'Bungee Inline', sans-serif;
+  font-size: 5vh;
+}
+
+.messages {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 3vh;
+}
+.message {
+  font-size: 2.5vh;
+}
+
 .gameOver .board {
   -webkit-filter: blur(2px);
   -moz-filter: blur(2px);
@@ -40,7 +55,7 @@
 
 .controls div {
   margin-bottom:10px;
-  font-size: 12px
+  //font-size: 3vh;
 }
 
 
@@ -116,7 +131,14 @@
 }
 
 .lastMove::before {
-    content: '🐰'
+    content: '🐰';
+}
+
+.safeHaven {
+  background-color: LIME;
+}
+.safeHaven::before {
+  content: '🐾';
 }
 
 .bonusScore {

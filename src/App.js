@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import CountUp from 'react-countup';
 import useSound from 'use-sound';
 import ls from 'local-storage'
 import bounce from './sounds/bounce.mp3';
@@ -13,6 +14,7 @@ import './App.css';
 
 // -------------- CONSTANTS -----------------
 
+const NUMERIC = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 const states = ['beenThere',
                 'open',
                 'blocked',
@@ -24,6 +26,8 @@ const states = ['beenThere',
                 'monster3'
                ]
 const boardSize = 20;
+const defaultReward  = 10;
+const monsterPrize = 50;
 
 const monsterMap = { monster:
                       { icon: '🐲',
@@ -56,6 +60,17 @@ const bonusPoints = (function() {
  const shuffle = (array) => {
    array.sort(() => Math.random() - 0.5);
    return array;
+ }
+
+ const leftPad = (str, char, desiredLen) => {
+   console.log(str);
+   console.log(char);
+   if (str && char) {
+     while (str.length < desiredLen) {
+       str = char + str;
+     }
+   }
+   return str;
  }
 
 const random = (min, max) =>
@@ -94,7 +109,8 @@ const reterraform = (board, handleBunnyDeath, messageBufferer) => {
   const monsters = [];
   board.forEach((row) => {
     row.forEach((square) => {
-      if (['blocked','potentialBoom','actualBoom'].includes(square.state)) {
+      square.safeHaven = false;
+      if (['blocked','potentialBoom','actualBoom','safeHaven'].includes(square.state)) {
         square.state = 'open';
       } else if (square.state === 'beenThere') {
         numberBeenThere++;
@@ -121,16 +137,19 @@ const reterraform = (board, handleBunnyDeath, messageBufferer) => {
   const warningMessages = ["BEWARE! Monster nearby - 80% chance of winning battle with monster.",
                            "BEWARE! Monster two squares away!"];
   const warnings = [];
+
+
+
+  //move monsters
   monsters.forEach(monster => {
     const monsterName = monster.state
     const currentDistance = distanceToBunny(monster, lastMove);
-    const monsterNeighbors = getNeighbors(monster, board);
+    const monsterNeighbors = Object.values(getNeighbors(monster, board));
     const bunny = monsterNeighbors.filter(n => n.state == 'lastMove');
     if (bunny.length > 0) {
       const bunnySquare = bunny[0];
       board[bunnySquare.row][bunnySquare.col].state = monsterName;
       board[monster.row][monster.col].state = 'blocked'
-
 
       messageBufferer("Blown up by monster");
       handleBunnyDeath();
@@ -165,10 +184,10 @@ const init = (firstMove) => {
   for (let i = 0; i < boardSize; i++) {
     board[i] = [];
     for (let j = 0; j < boardSize; j++) {
-      board[i][j] = {state: 'open', row: i, col: j };
+      board[i][j] = {state: 'open', row: i, col: j, reward: null, price: 0 };
       const edges = [0,boardSize-1];
       if (edges.includes(i) && edges.includes(j)) {
-        board[i][j]['score'] = bonusPoints[i][j];
+        board[i][j].reward = bonusPoints[i][j];
       }
     }
   }
@@ -199,20 +218,22 @@ const distanceToBunny = (square, bunnySquare) => {
   return distance;
 }
 
-const getNeighbors = (square, board) => {
-  const neighbors = [];
+const getNeighbors = (square, board, squaresAway=1) => {
+
+  const neighbors = {};
   const row = square.row;
   const col = square.col;
-  const above = Math.max(0,row-1);
-  const below = Math.min(boardSize-1,row+1);
-  const left = Math.max(0,col-1);
-  const right = Math.min(boardSize-1,col+1);
+  const distance = parseInt(squaresAway);
+  const above = Math.max(0,row-distance);
+  const below = Math.min(boardSize-distance,row+distance);
+  const left = Math.max(0,col-distance);
+  const right = Math.min(boardSize-distance,col+distance);
   for (let i = above; i <= below; i++) {
     for (let j = left; j <= right; j++) {
       if (i == row && j == col) {
         continue;
       }
-      neighbors.push(board[i][j]);
+      neighbors[[i,j]] = board[i][j];
     }
   }
   return neighbors;
@@ -257,19 +278,19 @@ const renderBoard = (board, isValid, handleValidBounce) => {
     <div className="board">
     { board.map((row, i) => {
         return row.map((square, j) => {
-          const type = square.state;
-          const score = square.score;
-          const key = "cell-" + i + "x" + j;
+          const reward = square.reward;
+          const key = `cell-${i}x${j}.${new Date()}`;
           const validSpace = isValid(square);
           return (
             <div key={key}
-                 className={`cell ${type} c${i}-${j} ${validSpace ? 'neighbor' : ''}`}
-                 onClick={(e) => {
+                 className={`cell ${square.state} c${i}-${j} ${validSpace ? 'neighbor' : ''}`}
+                 onMouseUp={(e) => {
+                   console.log(`trying to move to [${i},${j}].  valid? ${validSpace}`)
                    if (validSpace) {
                      handleValidBounce(square);
                    }
                  }}
-            >{score && <div className="bonusScore">+{score}</div>}</div>
+            >{reward && <div className="bonusScore">+{reward}</div>}</div>
           )
         })
       })
@@ -289,6 +310,8 @@ const App = (props) => {
   const [numGames, setNumGames] = useState(0);
   const [messages, setMessages] = useState([]);
   const [lastMove, setLastMove] = useState([0,0]);
+  const [priceOfSafety, setPriceOfSafety] = useState(0);
+  const [safeHop, setSafeHop] = useState(false);
   const [board, setBoard] = useState(() => {
     return init(lastMove);
   });
@@ -309,18 +332,8 @@ const App = (props) => {
   const [playOgre, exposedOgreData] = useSound(ogre, basicSoundControls);
   const [playFail] = useSound(fail, basicSoundControls);
 
-  const scoreBonus = (square) => {
-    const tuple = [];
-    const points = square.score;
-    tuple[0] = points;
-    if (points) {
-      tuple[1] = `+${points} points for reaching corner square`;
-    }
-    return tuple;
-  }
-
   const isBoxedIn = (square) => {
-    const neighbors = getNeighbors(square, board);
+    const neighbors = Object.values(getNeighbors(square, board));
     let isBoxedIn = true;
     neighbors.forEach((neighbor, i) => {
       if (!isBoxedIn) {
@@ -336,82 +349,80 @@ const App = (props) => {
     board[row][col].state = 'beenThere';
   }
 
+  const updateSquareToLastMove = (square) => {
+    setLastMove([square.row,square.col]);
+    square.state = 'lastMove';
+  }
+
   const handleValidBounce =  (square) => {
-    let soundHook = playBounce;
-    const [bonus, bonusMessage] = scoreBonus(square);
+    console.log(`handling valid bounce to [${square.row},${square.col}]`);
+    let messageBuffer = [];
+    const messageBufferer = (msg) => { messageBuffer = messageBuffer.concat(msg); }
+    // always bounce and get the reward
+    playBounce();
+    setPlaybackRateBounce(playbackRateBounce + 0.01);
+    setSafeHop(false);
+
+    updateLastMoveToBeenThere();
+
+    let bounceScore = defaultReward + square.reward;
+    messageBufferer(`+${defaultReward} points for reaching a safe square.`);
+    if (square.reward) {
+         messageBufferer(`+${square.reward} points for reaching corner square.`);
+    }
+    let discretionaryBonus = null;
+
     switch(square.state) {
       case 'potentialBoom':
         playRelief();
-        handleSuccessfulMove(square, bonus, bonusMessage);
+        messageBufferer("Phew! No bomb.");
+        handleSuccessfulMove(square, messageBufferer);
         break;
       case 'actualBoom':
         playBoom();
-        updateLastMoveToBeenThere();
-        //setBoard(board);
-        updateMessage("Blown up by bomb. GAME OVER");
+        messageBufferer("Blown up by bomb. GAME OVER");
         setGameIsActive(false);
         break;
+      case 'safeHaven':
       case 'open':
-        let msg = "+10 points for reaching a safe square."
-        let points = 10;
-        if (bonus) {
-          points = bonus;
-          msg = bonusMessage;
-        }
-        handleSuccessfulMove(square, points, msg);
+        handleSuccessfulMove(square, messageBufferer);
         break;
       case 'monster':
-        handleMonster(square);
-        break;
       case 'monster2':
-        handleMonster(square);
-        break;
       case 'monster3':
-        handleMonster(square);
+        const battleResults = handleMonster(square, messageBufferer);
+        bounceScore += battleResults.treasure;
+        setGameIsActive(battleResults.bunnyPrevailed);
         break;
       default:
         // code block
     }
+    updateMessage(messageBuffer);
+    updateScores(bounceScore);
   }
 
-  const handleSuccessfulMove = (square, points, message) => {
-    const msg = message || `${square.row}x${square.col}: ${square.state}`;
-    let messageBuffer = [msg];
-
-    updateScores(points || 10);
-
-    updateLastMoveToBeenThere();
-    square.state = 'lastMove';
-
-    setLastMove([square.row,square.col]);
-    playBounce();
-    setPlaybackRateBounce(playbackRateBounce + 0.01);
-
-
-    setBoard(reterraform(board, handleBunnyDeath, (msg) => { messageBuffer = messageBuffer.concat(msg); }));
+  const handleSuccessfulMove = (square, messageBufferer) => {
+    updateSquareToLastMove(square);
+    setBoard(reterraform(board, handleBunnyDeath, messageBufferer));
     if (gameIsActive && isBoxedIn(square)) {
-      messageBuffer.push("No legal squares to move to.  BLOCKED!  Game over.");
-      setGameIsActive(false);
+      messageBufferer("No legal squares to move to.  BLOCKED!  Game over.");
+      handleBunnyDeath();
     }
-    updateMessage(messageBuffer);
   }
 
   const handleBunnyDeath = () => {
     setGameIsActive(false);
     playFail();
-
   }
 
-  const handleMonster = (square) => {
+  const handleMonster = (square, messageBufferer) => {
+    messageBufferer(`In battle with ${monsterMap[square.state].icon}.`);
+    const victoryMsg = `Won the battle against ${monsterMap[square.state].icon} and gained ${monsterPrize} points for killing monster.`
+    const battleResults = { bunnyPrevailed: true,
+                            treasure: monsterPrize}
     if (random(0,1000) >= 200) {
       playVictory();
-      const msgs = [`Won the battle against ${monsterMap[square.state].icon} and gained 50 points for killing monster.`];
-      let points = 50;
-      const [bonusPoints, bonusMessage] = scoreBonus(square);
-      if (bonusPoints) {
-        points += bonusPoints
-        msgs.push(bonusMessage);
-      }
+
       //send monster home
       const monster = square.state
       if (lastMove[0] != monsterMap[square.state].homeRow) {
@@ -420,15 +431,15 @@ const App = (props) => {
       } else{
         board[0][0].state = square.state;
       }
-      handleSuccessfulMove(square, 50, msgs);
+      handleSuccessfulMove(square, messageBufferer);
     } else {
       playFail();
-      updateMessage([`In battle with ${monsterMap[square.state].icon}.`,
-                     'Eighty percent chance of winning the battle but lost.',
-                     'GAME OVER']);
-      setGameIsActive(false);
-      updateLastMoveToBeenThere();
+      battleResults.bunnyPrevailed = false;
+      battleResults.treasure = 0;
+      messageBufferer('Eighty percent chance of winning the battle but lost.');
+      messageBufferer('GAME OVER');
     }
+    return battleResults;
   }
 
   const updateScores = (points) => {
@@ -439,9 +450,6 @@ const App = (props) => {
   }
 
   const updateMessage = (newMsg) => {
-    console.log( `updating message? ${newMsg}`);
-    console.log(messages);
-    console.log(messages.concat(newMsg));
     setMessages(messages.concat(newMsg));
   }
 
@@ -455,9 +463,15 @@ const App = (props) => {
   const isValid = (square) => {
     const row = square.row;
     const col = square.col;
-    return gameIsActive && !['blocked','beenThere','lastMove'].includes(square.state) &&
-           [row-1,row,row+1].includes(lastMove[0]) &&
-           [col-1,col,col+1].includes(lastMove[1]);
+    if (!gameIsActive) return false;
+    if (square.state == 'safeHaven')  return true;
+    const permittedSquare = !['blocked','beenThere','lastMove'].includes(square.state);
+
+    const isNeighbor = [row-1,row,row+1].includes(lastMove[0]) &&
+    [col-1,col,col+1].includes(lastMove[1]);
+
+    return  permittedSquare && isNeighbor;
+
   }
 
   const handleStartOver = () => {
@@ -470,6 +484,32 @@ const App = (props) => {
     const totalGames = numGames + 1;
     setNumGames(totalGames);
     setAvgScore(totalScore/totalGames);
+    setPlaybackRateBounce(.95);
+  }
+
+  const handleBuyHop = (hops, price) => {
+    const b = board; // necesarry to make React feel like it has a new obj
+    updateMessage(`-${price} points to hop to safety.`);
+    updateScores(0-price);
+    setSafeHop(true);
+
+    //tag safe havens
+    console.log(`buying a hop of ${hops} distance for lastMove`);
+    const square = b[lastMove[0]][lastMove[1]];
+
+    const distanceAway = hops;
+    const wholeNeighborhood = getNeighbors(square,board,distanceAway);
+    const innerNeighborhood =  getNeighbors(square,board,distanceAway-1);
+    const safeHavens = [];
+    Object.values(innerNeighborhood).forEach((n) => {
+      delete wholeNeighborhood[[n.row,n.col]]
+    });
+    Object.values(wholeNeighborhood).forEach(n => {
+      if (n.state != 'beenThere' && !n.state.startsWith('monster')) {
+        n.state = 'safeHaven';
+      }
+    });
+    setBoard(b);
   }
 
   const inventory = getInventory(board);
@@ -484,13 +524,9 @@ const App = (props) => {
     <div className={`App ${gameIsActive ? 'active' : 'gameOver'}`}>
       <div className="left">
         <div className="controls">
-          <div>
-            <button onClick={()=>handleStartOver()}>Start Over</button>
-            </div>
-          <div><button>Buy Safe Move</button> -50pts</div>
-          <div>Score: {score}</div>
-          {messages && (<div>{ messages.map((m,i) => (
-              <div className={messages.length - i > 10 ? 'hiddenMessage' : ''}>{i+1}. {m}</div>
+          <div class="score">{leftPad(score.toString(), '0',4)}</div>
+          {messages && (<div className="messages">Game Log{ messages.map((m,i) => (
+              <div className={messages.length - i > 10 ? 'hiddenMessage' : 'message'}>{i+1}. {m}</div>
             ))
           }</div>
         )}
@@ -499,6 +535,8 @@ const App = (props) => {
       { renderBoard(board, isValid, handleValidBounce) }
       <div className="right">
         <div className="controls">
+          <div><button onClick={()=>handleStartOver()}>Start Over</button></div>
+          <div><button onClick={()=>handleBuyHop(2,50)}>Buy Safe Move</button> -50pts</div>
           <div>Num Skulls: {numSkulls}</div>
           <div>Num Bombs: {numActualBooms}</div>
           <div>Possibilty of Bomb: {Math.floor(percentBoom*100)}%</div>
