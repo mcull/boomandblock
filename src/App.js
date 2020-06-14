@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import useSound from 'use-sound';
-
-
+import randomColor from 'randomcolor';
 import ls from 'local-storage'
 import bounce from './sounds/bounce.mp3';
 import relief from './sounds/relief.mp3';
@@ -283,26 +282,26 @@ const renderKey = () => {
 
 const renderBoard = (board, isValid, handleValidBounce) => {
   return (
-    <div className="board">
-    { board.map((row, i) => {
-        return row.map((square, j) => {
-          const reward = square.reward;
-          const key = `cell-${i}x${j}.${new Date()}`;
-          const validSpace = isValid(square);
-          return (
-            <div key={key}
-                 className={`cell ${square.state} c${i}-${j} ${validSpace ? 'neighbor' : ''}`}
-                 onMouseUp={(e) => {
-                   console.log(`trying to move to [${i},${j}].  valid? ${validSpace}`)
-                   if (validSpace) {
-                     handleValidBounce(square);
-                   }
-                 }}
-            >{reward && <div className="bonusScore">+{reward}</div>}</div>
-          )
+      <div className="board">
+      { board.map((row, i) => {
+          return row.map((square, j) => {
+            const reward = square.reward;
+            const key = `cell-${i}x${j}.${new Date()}`;
+            const validSpace = isValid(square);
+            return (
+              <div key={key}
+                   className={`cell ${square.state} c${i}-${j} ${validSpace ? 'neighbor' : ''}`}
+                   onMouseUp={(e) => {
+                     console.log(`trying to move to [${i},${j}].  valid? ${validSpace}`)
+                     if (validSpace) {
+                       handleValidBounce(square);
+                     }
+                   }}
+              >{reward && <div className="bonusScore">+{reward}</div>}</div>
+            )
+          })
         })
-      })
-    }
+      }
     </div>
   )
 }
@@ -315,7 +314,7 @@ const renderMessages = (messages, moveNum, gameIsActive, handleStartOver) => {
       <p>Or eat them. 🍿</p>
       <p>+50 points when you battle a monster and win.</p>
       <p>You can also hop on ☠️ squares.  You may have to.</p>
-      <p>Some of them have 💣s under them, but some are safe.</p>
+      <p>Some of them have 💣 under them, but some are safe.</p>
       <p>Good luck!</p>
     </div>);
   }
@@ -569,6 +568,7 @@ const App = (props) => {
       </div>
       { renderBoard(board, isValid, handleValidBounce) }
       <div className="right">
+      <div class="title"><b>Boom and Blocked</b> <span style={{fontWeight:200}}>by Richard Wiener</span></div>
         <div className="controls">
           <div class="salesPitch">Buy a safe hop?</div>
             <div class="smallPrint">Hop safely to one or two squares away.</div>

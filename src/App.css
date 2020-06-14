@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Rye&family=Bungee+Inline&family=Open+Sans&family=Poiret+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Rye&family=Bungee+Inline&family=Open+Sans&family=Poiret+One&display=swap');
 
 .score {
   font-family: 'Bungee Inline', sans-serif;
@@ -222,7 +222,8 @@
 .monster,
 .monster2,
 .monster3 {
-    background-color: rgba(0,0,0,.9);
+    background-color: rgba(136, 14, 79,.9);
+    border-radius: 5px;
 }
 
 .monster::before {
@@ -273,4 +274,13 @@
 
 .c19-19 .bonusScore {
  bottom: -20px;
+}
+
+.title {
+  width: 100%;
+  font-size: 4vh;
+  text-align: center;
+  margin-bottom:6vh;
+  color: #03A9F4;
+  font-family: 'Luckiest Guy', sans-serif;
 }

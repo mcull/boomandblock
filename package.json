@@ -9,6 +9,7 @@
     "install": "^0.13.0",
     "local-storage": "^2.0.0",
     "ordinal": "^1.0.3",
+    "randomcolor": "^0.5.4",
     "react": "^16.13.1",
     "react-animated-number": "^0.4.4",
     "react-countup": "^4.3.3",
