@@ -35,7 +35,7 @@ const monsterMap = { monster:
                       },
                      monster2:
                        { icon: '👺',
-                         homeRow: boardSize-1,
+                         homeRow: 0, //boardSize-1,
                          homeCol: 0 },
                      monster3:
                        { icon: '👹',
@@ -232,9 +232,9 @@ const getNeighbors = (square, board, squaresAway=1) => {
   const col = square.col;
   const distance = parseInt(squaresAway);
   const above = Math.max(0,row-distance);
-  const below = Math.min(boardSize-distance,row+distance);
+  const below = Math.min(boardSize-1,row+distance);
   const left = Math.max(0,col-distance);
-  const right = Math.min(boardSize-distance,col+distance);
+  const right = Math.min(boardSize-1,col+distance);
   for (let i = above; i <= below; i++) {
     for (let j = left; j <= right; j++) {
       if (i == row && j == col) {
@@ -343,7 +343,7 @@ const App = (props) => {
   const [avgScore, setAvgScore] = useStickyState(0, "avgScore");
   const [numGames, setNumGames] = useState(0);
   const [messages, setMessages] = useState([]);
-  const [lastMove, setLastMove] = useState([0,0]);
+  const [lastMove, setLastMove] = useState([18,2]);
   const [counter, setCounter] = useState(0)
   const [priceOfSafety, setPriceOfSafety] = useState(0);
   const [safeHop, setSafeHop] = useState(false);
