@@ -1,4 +1,6 @@
+import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useState, useEffect } from 'react';
+import { Container, Col, Row  } from 'reactstrap';
 import useSound from 'use-sound';
 import randomColor from 'randomcolor';
 import ls from 'local-storage'
@@ -12,6 +14,8 @@ import dragon from './sounds/dragon.mp3';
 import fail from './sounds/fail2.mp3';
 import './App.css';
 import ordinal from 'ordinal'
+import converter from 'number-to-words';
+
 // -------------- CONSTANTS -----------------
 
 const states = ['beenThere',
@@ -280,9 +284,9 @@ const renderKey = () => {
   )
 }
 
-const renderBoard = (board, isValid, handleValidBounce) => {
+const renderBoard = (board, isValid, handleValidBounce, gameIsActive) => {
   return (
-      <div className="board">
+      <div className={`board ${gameIsActive ? 'active' : 'gameOver'}`}>
       { board.map((row, i) => {
           return row.map((square, j) => {
             const reward = square.reward;
@@ -559,41 +563,56 @@ const App = (props) => {
     percentBoom = Number.parseFloat(numActualBooms/numSkulls).toFixed(2);
   }
   return (
-    <div className={`App ${gameIsActive ? 'active' : 'gameOver'}`}>
-      <div className="left">
-        <div className="controls">
-          <div className={`score ${score < 0 ? 'red' : ''}`}>{score >= 0 ? leftPad(score.toString(), '0',4) : score}</div>
-          { renderMessages(messages, counter, gameIsActive, handleStartOver) }
-        </div>
+    <>
+    <Container fluid={true}>
+      <Row>
+        <Col xs="9">
+          <div class="title"><b>💥Boom or Blocked</b></div>
+        </Col>
+        <Col xs="3">
+        <div className={`score ${score < 0 ? 'red' : ''}`}>{score >= 0 ? leftPad(score.toString(), '0',4) : score}</div>
+        </Col>
+        <Col lg="5"></Col>
+      </Row>
+      </Container>
+      <div className="infoBox d-none d-lg-block">
+        { renderMessages(messages, counter, gameIsActive, handleStartOver) }
       </div>
-      { renderBoard(board, isValid, handleValidBounce) }
-      <div className="right">
-      <div class="title"><b>Boom or Blocked</b><div style={{fontWeight:200}}>by Richard Wiener</div></div>
-        <div className="controls">
-          <div class="salesPitch">Buy a safe hop?</div>
-            <div class="smallPrint">Hop safely to one or two squares away.</div>
-          <div class="safeHavenButtons">
-            <div class="safeHavenPurchase">
-              <button onClick={()=>handleBuyHop(1,50)}>🐇</button>
-              <div class="pointPrice">-50pts</div>
-            </div>
-            <div class="safeHavenPurchase">
-              <button onClick={()=>handleBuyHop(2,75)}>🐇🐇</button>
-              <div class="pointPrice">-75pts</div>
-            </div>
+      { renderBoard(board, isValid, handleValidBounce, gameIsActive) }
+
+      <div className="statsBox">
+        <div className="salesPitch">Buy a safe hop?</div>
+        <div className="smallPrint">Hop safely to one or two squares away.</div>
+        <div className="safeHavenButtons">
+          <div className="safeHavenPurchase">
+            <button onClick={()=>handleBuyHop(1,50)}>🐇</button>
+            <div class="pointPrice">-50pts</div>
           </div>
-          <div class="stats">
-            <div class="statsHeader">&middot; Stats &middot; </div>
-            <div><b>Num Skulls</b> {numSkulls}</div>
-            <div><b>Num Bombs</b> {numActualBooms}</div>
-            <div><b>Possibilty of Bomb</b> {Math.floor(percentBoom*100)}%</div>
-            <div><b>Best Score</b> {maxScore}</div>
-            <div><b>Average Score</b> {Math.round(avgScore,2)}</div>
-            <div className="resetStats"><button class="resetStatsButton" onClick={resetStats}>Reset stats</button></div>
+          <div class="safeHavenPurchase">
+            <button onClick={()=>handleBuyHop(2,75)}>🐇🐇</button>
+            <div class="pointPrice">-75pts</div>
           </div>
         </div>
+        <div class="stats">
+          <b>stats</b><br/>
+          {converter.toWords(numSkulls)} skulls<br/>
+          {converter.toWords(numActualBooms)} bombs<br/>
+          Possibilty of Bomb: {Math.floor(percentBoom*100)}%<br/>
+          Best Score: {maxScore}<br/>
+          Average Score: {Math.round(avgScore,2)}<br/>
+          <div className="resetStats"><button class="resetStatsButton" onClick={resetStats}>Reset stats</button></div>
+        </div>
       </div>
-    </div>
+      <div className="infoBox d-lg-none">
+        { renderMessages(messages, counter, gameIsActive, handleStartOver) }
+      </div>
+
+      <Container fluid={true}>
+        <Row className="footer">
+          <Col>Copyright 	&copy; 2020 Richard Wiener &amp; sons</Col>
+        </Row>
+      </Container>
+      </>
   );
 }
 

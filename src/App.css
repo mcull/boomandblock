@@ -2,15 +2,17 @@
 
 .score {
   font-family: 'Bungee Inline', sans-serif;
-  font-size: 5vh;
+  font-size: 36px;
+  text-align: right;
 }
 
 .speech-bubble {
 	position: relative;
 	background: #daf396;
 	border-radius: 1em;
-  font-size: 2.5vh;
-  padding: 2vh;
+  font-size: .75em;
+  padding: 10px;
+  margin-bottom: 2vh;
 }
 
 .speech-bubble:after {
@@ -39,13 +41,14 @@
 }
 
 .safeHavenButtons {
-  text-align: center;
+  text-align: left;
 
 }
 
 .safeHavenPurchase {
   display: inline-block;
-  margin: 10px;
+  margin-top: 10px;
+  margin-right: 10px;
 }
 
 .safeHavenPurchase button {
@@ -62,52 +65,27 @@
 .salesPitch {
   font-weight: bold;
   font-family: 'Open Sans';
-  text-align: center;
+  text-align: left;
 }
 
 .smallPrint {
   font-size: 2vh;
   color: #999999;
   font-family: 'Open Sans';
-  text-align: center;
+  text-align: left;
 }
 
 .messages {
   font-family: 'Open Sans', sans-serif;
   font-size: 3vh;
 }
-.message {
-
-}
 
 .stats {
-  background-color: #E3F2FD;
-  font-size: 2vh;
-  padding: 10px;
-  width:200px;
-  height: 200px;
-  border-radius: 150px;
-}
-
-.statsHeader {
-  font-weight: bold;
-  font-family: 'Open Sans';
-  text-align: center;
-  font-size: 4vh;
-}
-
-.resetStats {
-  text-align: right;
-  background-color:
+  font-size: 14px;
 }
 
 .resetStatsButton {
-  width: 8vw;
-  height: 4vw;
-  margin: 0 auto;
-  background-color: #FFECB3;
-  cursor:pointer;
-  border: 2px dashed WHITE;
+  font-size: 12px;
 }
 
 .gameOver .board {
@@ -122,43 +100,36 @@
   display: none;
 }
 
-.App {
-  display: grid;
-  grid-template-columns: minmax(150px, 1fr) 4fr minmax(250px, 1fr);
-  margin-top: 5vh;
-
-}
-
 .board{
   border: 20px white solid;
   outline: 2px #999999 solid;
+  float: left;
   //border-radius: 10vh;
   display: grid;
   background-image: linear-gradient(to bottom right, CRIMSON, red, SILVER, green, OLIVEDRAB);
   grid-gap: 1px;
-  //width: 80vh;
-  margin: 0 auto;
-  grid-template-columns: repeat(20, 4vh);
-  grid-template-rows: repeat(20, 4vh);
+  width: 80vmin;
+  height: 80vmin;
+  margin-left: 25px;
+  grid-template-columns: repeat(20, 1fr);
+  grid-template-rows: repeat(20, 1fr);
 }
 
-.left {
-  margin-left: 10px;
+.infoBox {
+  margin-left: 20px;
+  float: left;
+  width: 200px
 }
 
-.right {
-  margin-right: 10px;
+.statsBox {
+  margin-left: 20px;
+  float: left;
 }
-
-.controls div {
-  margin-bottom:10px;
-  //font-size: 3vh;
-}
-
 
 .cell {
   position: relative;
-  font-size: 3.5vh;
+  font-size: 3vh;
+  line-height: 15px;
   border: 1px dotted rgba(255,255,255,.2);
 }
 
@@ -212,9 +183,12 @@
 }
 
 .potentialBoom::before {
+  position: absolute;
   content: '☠️';
 }
 .actualBoom::before {
+  //position: relative;
+  position: absolute;
   content: '☠️';
   //content: '💣';
 }
@@ -222,22 +196,27 @@
 .monster,
 .monster2,
 .monster3 {
+    position: relative;
     background-color: rgba(136, 14, 79,.9);
 }
 
 .monster::before {
+  position: absolute;
   content: '🐲';
 }
 .monster2::before {
+  position: absolute;
   content: '👺';
 }
 
 .monster3::before {
+  position: absolute;
   content: '👹';
 }
 
 .lastMove::before {
     content: '🐰';
+    position: relative;
 }
 
 .safeHaven {
@@ -276,9 +255,29 @@
 }
 
 .title {
+  font-family: 'Luckiest Guy';
   width: 100%;
-  font-size: 3vh;
+  font-size: 36px;
+  margin-top: 5px;
+  margin-bottom: 0px;
+  text-align: left;
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  font-size: 10px;
   text-align: center;
-  margin-bottom:6vh;
-  color: #6D4C41;
+}
+
+@media (max-width: 576px) {
+  .title {
+    font-size: 24px;
+  }
+
+  .score {
+    font-size: 24px;
+  }
 }

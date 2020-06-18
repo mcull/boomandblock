@@ -6,8 +6,10 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "bootstrap": "^4.5.0",
     "install": "^0.13.0",
     "local-storage": "^2.0.0",
+    "number-to-words": "^1.2.4",
     "ordinal": "^1.0.3",
     "randomcolor": "^0.5.4",
     "react": "^16.13.1",
@@ -18,6 +20,7 @@
     "react-flip-numbers": "^3.0.5",
     "react-scripts": "3.4.1",
     "react-split-flap-display": "^0.3.2",
+    "reactstrap": "^8.4.1",
     "styled-components": "^5.1.1",
     "use-sound": "^1.0.2"
   },
