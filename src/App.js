@@ -554,29 +554,32 @@ const App = (props) => {
       </Modal>
     <Container fluid={true}>
       <Row>
-        <Col xs="9">
-          <div class="title"><b><span role="img" aria-label="boom">💥</span>Boom or Blocked</b> <div className="info" onClick={toggle}>&#9432;</div></div>
-        </Col>
-        <Col xs="3">
-        <div className={`score ${score < 0 ? 'red' : ''}`}>{score >= 0 ? leftPad(score.toString(), '0',4) : score}</div>
-        </Col>
+          <Col xs="9">
+            <div class="title"><b><span role="img" aria-label="boom">💥</span>Boom or Blocked</b> <div className="info" onClick={toggle}>&#9432;</div></div>
+          </Col>
+          <Col xs="3">
+          <div className={`score ${score < 0 ? 'red' : ''}`}>{score >= 0 ? leftPad(score.toString(), '0',4) : score}</div>
+          </Col>
       </Row>
       <Row className="statsRow">
-        <Col xs="6">
-          { renderBombStats(numSkulls, numActualBooms, gameIsActive) }
-        </Col>
-        <Col xs="6" className="scoreStats">
-          <span class="resetStats" onClick={resetStats}>&#9851;</span> Top {maxScore} Avg {Math.round(avgScore,2)}
+        <Col xs={{size: 12, order: 1, offset:0}} lg={{size: 8, order: 1, offset:4}} style={{paddingLeft:0}}>
+          <Container fluid={true}>
+            <Row>
+              <Col xs="6">
+                { renderBombStats(numSkulls, numActualBooms, gameIsActive) }
+              </Col>
+              <Col xs="6" className="scoreStats">
+                <span class="resetStats" onClick={resetStats}>&#9851;</span> Top {maxScore} Avg {Math.round(avgScore,2)}
+              </Col>
+            </Row>
+          </Container>
         </Col>
       </Row>
       <Row>
-        <Col sm="12"  md="8" lg="6">
-          { renderBoard(board, isValid, handleValidBounce, gameIsActive) }
-        </Col>
-        <Col sm="12" md="4" lg="6">
-          <Container>
+        <Col xs={{size: 12, order: 2, offset:0}} lg={{size: 3, order: 2, offset:0}} xl={{size: 2, order: 1, offset:0}}>
+          <Container syle={{margin:'0px auto'}}>
             <Row>
-              <Col xs="5" sm="12" lg="5">
+              <Col xs="6" lg="12" md="6">
                 <div className="statsBox">
                   <div className="salesPitch">Buy a safe hop?</div>
                   <div className="smallPrint">Hop safely to one or two squares away.</div>
@@ -592,11 +595,14 @@ const App = (props) => {
                   </div>
                 </div>
               </Col>
-              <Col xs="7" sm="12" lg="7">
+              <Col xs="6" lg="12" md="6">
                 { renderMessages(messages, counter, gameIsActive, handleStartOver) }
               </Col>
             </Row>
           </Container>
+        </Col>
+        <Col  xs={{size: 12, order: 1, offset:0}} lg={{size: 9, order: 2, offset:0}} xl={{size: 10, order: 2, offset:0}} className="boardContainer">
+          { renderBoard(board, isValid, handleValidBounce, gameIsActive) }
         </Col>
       </Row>
       <Row className="footer">
