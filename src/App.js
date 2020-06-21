@@ -1,9 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import React, { useState, useEffect } from 'react';
-import { Container, Col, Row  } from 'reactstrap';
+import React, { useState } from 'react';
+import { Button, Container, Col, Row, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
 import useSound from 'use-sound';
-import randomColor from 'randomcolor';
-import ls from 'local-storage'
 import bounce from './sounds/bounce.mp3';
 import relief from './sounds/relief.mp3';
 import boom from './sounds/boom.mp3';
@@ -13,21 +11,9 @@ import demon from './sounds/demon.mp3';
 import dragon from './sounds/dragon.mp3';
 import fail from './sounds/fail2.mp3';
 import './App.css';
-import ordinal from 'ordinal'
 import converter from 'number-to-words';
 
 // -------------- CONSTANTS -----------------
-
-const states = ['beenThere',
-                'open',
-                'blocked',
-                'actualBoom',
-                'potentialBoom',
-                'lastMove',
-                'monster',
-                'monster2',
-                'monster3'
-               ]
 const boardSize = 20;
 const defaultReward  = 10;
 const monsterPrize = 50;
@@ -60,10 +46,12 @@ const bonusPoints = (function() {
            })();
 
 // -------------- UTILS ---------------
+/*
  const shuffle = (array) => {
    array.sort(() => Math.random() - 0.5);
    return array;
  }
+*/
 
  const leftPad = (str, char, desiredLen) => {
    if (str && char) {
@@ -82,7 +70,7 @@ const sprinkleLiberally = (board, num, from, to) => {
     const row = random(0,boardSize);
     const col = random(0,boardSize);
     const candidate = board[row][col]
-    if (candidate.state == from) {
+    if (candidate.state === from) {
         candidate.state = to;
         num--;
     }
@@ -145,13 +133,13 @@ const reterraform = (board, handleBunnyDeath, messageBufferer, monsterSounds) =>
   monsters.forEach(monster => {
     const monsterName = monster.state
     const monsterData = monsterMap[monsterName];
-    if (monsterData.status == 'inTimeOut') {
+    if (monsterData.status === 'inTimeOut') {
       monsterData.status = null;
       return;
     }
     const currentDistance = distanceToBunny(monster, lastMove);
     const monsterNeighbors = Object.values(getNeighbors(monster, board));
-    const bunny = monsterNeighbors.filter(n => n.state == 'lastMove');
+    const bunny = monsterNeighbors.filter(n => n.state === 'lastMove');
     if (bunny.length > 0) {
       const bunnySquare = bunny[0];
       board[bunnySquare.row][bunnySquare.col].state = monsterName;
@@ -161,7 +149,7 @@ const reterraform = (board, handleBunnyDeath, messageBufferer, monsterSounds) =>
       handleBunnyDeath();
       return board;
     }
-    const openSquares = monsterNeighbors.filter(n => n.state == 'open');
+    const openSquares = monsterNeighbors.filter(n => n.state === 'open');
     let closest = currentDistance;
     let candidateMove = null;
     openSquares.forEach(o => {
@@ -218,8 +206,7 @@ const distanceToBunny = (square, bunnySquare) => {
   let distance = 0;
   let pos = [square.row, square.col];
   const bunny = [bunnySquare.row, bunnySquare.col];
-  let counter = 0;
-  while (!(pos[0] == bunnySquare.row && pos[1] == bunnySquare.col)) {
+  while (!(pos[0] === bunnySquare.row && pos[1] === bunnySquare.col)) {
     [0,1].forEach((direction) => {
       const distanceAway = bunny[direction] - pos[direction];
       pos[direction] = pos[direction] + distanceAway/Math.max(1,Math.abs(distanceAway));
@@ -241,7 +228,7 @@ const getNeighbors = (square, board, squaresAway=1) => {
   const right = Math.min(boardSize-1,col+distance);
   for (let i = above; i <= below; i++) {
     for (let j = left; j <= right; j++) {
-      if (i == row && j == col) {
+      if (i === row && j === col) {
         continue;
       }
       neighbors[[i,j]] = board[i][j];
@@ -266,22 +253,13 @@ const getInventory = (board) => {
 }
 
 // -------------- PAGE ELEMENTS ---------------
-
-const renderKey = () => {
-  return (
-    <div id="key" className="key">
-      &nbsp;
-      {
-        states.map((s) => {
-          return (
-            <div className="keyItemWithLabel">
-              <div className={`keyItem ${s}`}/>&nbsp;{s}
-            </div>
-          )
-        })
-      }
-    </div>
-  )
+const renderBombStats = (numSkulls, numActualBooms, gameIsActive) => {
+  if (numSkulls > 0 && gameIsActive) {
+    const percentBoom = Number.parseFloat(numActualBooms/numSkulls).toFixed(2);
+    return (<div className="bombReport"><span role="img" aria-label="bomb">💣</span>{numActualBooms} <span role="img" aria-label="skull">☠️</span>{numSkulls} = <span role="img" aria-label="grimmace">😬</span><span role="img" aria-label="cross-fingers">🤞</span>{Math.floor(percentBoom*100)}%</div>)
+  } else {
+    return (<div>&nbsp;</div>)
+  }
 }
 
 const renderBoard = (board, isValid, handleValidBounce, gameIsActive) => {
@@ -310,36 +288,35 @@ const renderBoard = (board, isValid, handleValidBounce, gameIsActive) => {
   )
 }
 
+const capitalizeFirstLetter = (string) => {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
 const renderMessages = (messages, moveNum, gameIsActive, handleStartOver) => {
-  if (moveNum == 0) {
-    return (<div className="instructions">
-      <p>Hop around on the <span className="green">green</span> squares.</p>
-      <p>Avoid the monsters.  They're coming after you!</p>
-      <p>Or eat them. 🍿</p>
-      <p>+50 points when you battle a monster and win.</p>
-      <p>You can also hop on ☠️ squares.  You may have to.</p>
-      <p>Some of them have 💣 under them, but some are safe.</p>
-      <p>Good luck!</p>
-    </div>);
+  if (moveNum === 0) {
+    return null;
   }
-  if (!messages || messages.length == 0) {
+  if (!messages || messages.length === 0) {
     return null;
   }
   return (
-    <div className="messages">
-      <div className="messagesHeading">{ordinal(moveNum)} move...</div>
+    <ul className="messageList">
+    {capitalizeFirstLetter(converter.toWordsOrdinal(moveNum))} move.
     { [].concat(messages).map((m) => (
-      <div className='message speech-bubble'>{m}</div>
+      <li className='message fadeOut'>{m}</li>
     ))
     }
-    {!gameIsActive && (<div><button class="startOver" onClick={()=>handleStartOver()}>Start Over</button></div>)}
-    </div>
+    {!gameIsActive && (
+      <div className="startOver" onClick={ handleStartOver }>Play Again!</div>
+    )}
+    </ul>
   );
 }
 
 // --- STATE MGMT & LUDICROUS CALLBACKS  ---
 
 const App = (props) => {
+  const [modal, setModal] = useState(false);
   const [gameIsActive, setGameIsActive] = useState(true);
   const [score, setScore] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
@@ -349,8 +326,6 @@ const App = (props) => {
   const [messages, setMessages] = useState([]);
   const [lastMove, setLastMove] = useState([0,0]);
   const [counter, setCounter] = useState(0)
-  const [priceOfSafety, setPriceOfSafety] = useState(0);
-  const [safeHop, setSafeHop] = useState(false);
   const [board, setBoard] = useState(() => {
     return init(lastMove);
   });
@@ -363,13 +338,15 @@ const App = (props) => {
       volume: .10
     }
   );
-  const [playRelief, exposedReliefData] = useSound(relief, basicSoundControls);
-  const [playBoom, exposedBoomData] = useSound(boom,basicSoundControls);
-  const [playVictory, exposedVictoryData] = useSound(victory, basicSoundControls);
-  const [playDemon, exposedDemonData] = useSound(demon, basicSoundControls);
-  const [playDragon, exposedDragonData] = useSound(dragon, basicSoundControls);
-  const [playOgre, exposedOgreData] = useSound(ogre, basicSoundControls);
+  const [playRelief] = useSound(relief, basicSoundControls);
+  const [playBoom] = useSound(boom,basicSoundControls);
+  const [playVictory] = useSound(victory, basicSoundControls);
+  const [playDemon] = useSound(demon, basicSoundControls);
+  const [playDragon] = useSound(dragon, basicSoundControls);
+  const [playOgre] = useSound(ogre, basicSoundControls);
   const [playFail] = useSound(fail, basicSoundControls);
+
+  const toggle = () => setModal(!modal);
 
   const isBoxedIn = (square) => {
     const neighbors = Object.values(getNeighbors(square, board));
@@ -400,16 +377,14 @@ const App = (props) => {
     // always bounce and get the reward
     playBounce();
     setPlaybackRateBounce(playbackRateBounce + 0.01);
-    setSafeHop(false);
 
     updateLastMoveToBeenThere();
 
     let bounceScore = defaultReward + square.reward;
-    messageBufferer(`+${defaultReward} points for reaching a safe square.`);
+    messageBufferer(`+${defaultReward} points for the bounce.`);
     if (square.reward) {
          messageBufferer(`+${square.reward} points for reaching corner square.`);
     }
-    let discretionaryBonus = null;
 
     switch(square.state) {
       case 'potentialBoom':
@@ -420,6 +395,7 @@ const App = (props) => {
       case 'actualBoom':
         playBoom();
         messageBufferer("Blown up by bomb. GAME OVER");
+        square.state = 'detonated';
         setGameIsActive(false);
         break;
       case 'safeHaven':
@@ -461,11 +437,12 @@ const App = (props) => {
                             treasure: monsterPrize}
     if (random(0,1000) >= 200) {
       playVictory();
+      messageBufferer(victoryMsg);
 
       //send monster home
       const monster = square.state
       const monsterData = monsterMap[square.state];
-      if (lastMove[0] != monsterData.homeRow && lastMove[1] != monsterData.homeCol) {
+      if (lastMove[0] !== monsterData.homeRow && lastMove[1] !== monsterData.homeCol) {
         const monsterData = monsterMap[monster];
         board[monsterData.homeRow][monsterData.homeCol].state = square.state;
         monsterData['status'] = 'inTimeOut';
@@ -505,7 +482,7 @@ const App = (props) => {
     const row = square.row;
     const col = square.col;
     if (!gameIsActive) return false;
-    if (square.state == 'safeHaven')  return true;
+    if (square.state === 'safeHaven')  return true;
     const permittedSquare = !['blocked','beenThere','lastMove'].includes(square.state);
 
     const isNeighbor = [row-1,row,row+1].includes(lastMove[0]) &&
@@ -533,21 +510,19 @@ const App = (props) => {
     const b = board; // necesarry to make React feel like it has a new obj
     updateMessage(`-${price} points to hop to safety.`);
     updateScores(0-price);
-    setSafeHop(true);
 
     //tag safe havens
-    console.log(`buying a hop of ${hops} distance for lastMove`);
     const square = b[lastMove[0]][lastMove[1]];
 
     const distanceAway = hops;
     const wholeNeighborhood = getNeighbors(square,board,distanceAway);
     const innerNeighborhood =  getNeighbors(square,board,distanceAway-1);
-    const safeHavens = [];
+
     Object.values(innerNeighborhood).forEach((n) => {
       delete wholeNeighborhood[[n.row,n.col]]
     });
     Object.values(wholeNeighborhood).forEach(n => {
-      if (n.state != 'beenThere' && !n.state.startsWith('monster')) {
+      if (n.state !== 'beenThere' && !n.state.startsWith('monster')) {
         n.state = 'safeHaven';
       }
     });
@@ -558,60 +533,76 @@ const App = (props) => {
   const potentialBoom = inventory['potentialBoom'] || 0;
   const numActualBooms = inventory['actualBoom'] || 0;
   const numSkulls = potentialBoom + numActualBooms;
-  let percentBoom = 0;
-  if (numSkulls > 0) {
-    percentBoom = Number.parseFloat(numActualBooms/numSkulls).toFixed(2);
-  }
   return (
     <>
+      <Modal isOpen={modal} toggle={toggle} className="instructions">
+        <ModalHeader toggle={toggle}>INSTRUCTIONS</ModalHeader>
+        <ModalBody>
+        <div className="instructions">
+          <p>Hop around on the <span className="green">green</span> squares.</p>
+          <p>Avoid the monsters.  They're coming after you!</p>
+          <p>Or eat them. <span role="img" aria-label="popcorn">🍿</span></p>
+          <p>+50 points when you battle a monster and win.</p>
+          <p>You can also hop on <span role="img" aria-label="skull">☠️ </span>squares.  You may have to.</p>
+          <p>Some of them have <span role="img" aria-label="bomb">💣</span> under them, but some are safe.</p>
+          <p>Good luck!</p>
+        </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button color="primary" onClick={toggle}>Let's play!</Button>{' '}
+        </ModalFooter>
+      </Modal>
     <Container fluid={true}>
       <Row>
         <Col xs="9">
-          <div class="title"><b>💥Boom or Blocked</b></div>
+          <div class="title"><b><span role="img" aria-label="boom">💥</span>Boom or Blocked</b> <div className="info" onClick={toggle}>&#9432;</div></div>
         </Col>
         <Col xs="3">
         <div className={`score ${score < 0 ? 'red' : ''}`}>{score >= 0 ? leftPad(score.toString(), '0',4) : score}</div>
         </Col>
-        <Col lg="5"></Col>
       </Row>
-      </Container>
-      <div className="infoBox d-none d-lg-block">
-        { renderMessages(messages, counter, gameIsActive, handleStartOver) }
-      </div>
-      { renderBoard(board, isValid, handleValidBounce, gameIsActive) }
-
-      <div className="statsBox">
-        <div className="salesPitch">Buy a safe hop?</div>
-        <div className="smallPrint">Hop safely to one or two squares away.</div>
-        <div className="safeHavenButtons">
-          <div className="safeHavenPurchase">
-            <button onClick={()=>handleBuyHop(1,50)}>🐇</button>
-            <div class="pointPrice">-50pts</div>
-          </div>
-          <div class="safeHavenPurchase">
-            <button onClick={()=>handleBuyHop(2,75)}>🐇🐇</button>
-            <div class="pointPrice">-75pts</div>
-          </div>
-        </div>
-        <div class="stats">
-          <b>stats</b><br/>
-          {converter.toWords(numSkulls)} skulls<br/>
-          {converter.toWords(numActualBooms)} bombs<br/>
-          Possibilty of Bomb: {Math.floor(percentBoom*100)}%<br/>
-          Best Score: {maxScore}<br/>
-          Average Score: {Math.round(avgScore,2)}<br/>
-          <div className="resetStats"><button class="resetStatsButton" onClick={resetStats}>Reset stats</button></div>
-        </div>
-      </div>
-      <div className="infoBox d-lg-none">
-        { renderMessages(messages, counter, gameIsActive, handleStartOver) }
-      </div>
-
-      <Container fluid={true}>
-        <Row className="footer">
-          <Col>Copyright 	&copy; 2020 Richard Wiener &amp; sons</Col>
-        </Row>
-      </Container>
+      <Row className="statsRow">
+        <Col xs="6">
+          { renderBombStats(numSkulls, numActualBooms, gameIsActive) }
+        </Col>
+        <Col xs="6" className="scoreStats">
+          <span class="resetStats" onClick={resetStats}>&#9851;</span> Top {maxScore} Avg {Math.round(avgScore,2)}
+        </Col>
+      </Row>
+      <Row>
+        <Col sm="12"  md="8" lg="6">
+          { renderBoard(board, isValid, handleValidBounce, gameIsActive) }
+        </Col>
+        <Col sm="12" md="4" lg="6">
+          <Container>
+            <Row>
+              <Col xs="5" sm="12" lg="5">
+                <div className="statsBox">
+                  <div className="salesPitch">Buy a safe hop?</div>
+                  <div className="smallPrint">Hop safely to one or two squares away.</div>
+                  <div className="safeHavenButtons">
+                    <div className="safeHavenPurchase">
+                      <button onClick={()=>handleBuyHop(1,50)}><span role="img" aria-label="bunny">🐇</span></button>
+                      <div class="pointPrice">-50pts</div>
+                    </div>
+                    <div class="safeHavenPurchase">
+                      <button onClick={()=>handleBuyHop(2,75)}><span role="img" aria-label="bunny">🐇</span><span role="img" aria-label="bunny">🐇</span></button>
+                      <div class="pointPrice">-75pts</div>
+                    </div>
+                  </div>
+                </div>
+              </Col>
+              <Col xs="7" sm="12" lg="7">
+                { renderMessages(messages, counter, gameIsActive, handleStartOver) }
+              </Col>
+            </Row>
+          </Container>
+        </Col>
+      </Row>
+      <Row className="footer">
+        <Col>Copyright 	&copy; 2020 Richard Wiener &amp; sons</Col>
+      </Row>
+    </Container>
       </>
   );
 }

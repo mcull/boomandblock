@@ -1026,6 +1026,13 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
+"@babel/runtime@^7.1.5":
+  version "7.10.3"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.10.3.tgz#670d002655a7c366540c67f6fd3342cd09500364"
+  integrity sha512-RzGO0RLSdokm9Ipe/YD+7ww8X2Ro79qiXZF3HU9ljrM+qnJmH1Vqth+hbiQZy761LnMJTMitHDuKVYTk3k4dLw==
+  dependencies:
+    regenerator-runtime "^0.13.4"
+
 "@babel/template@^7.10.1":
   version "7.10.1"
   resolved "https://registry.yarnpkg.com/@babel/template/-/template-7.10.1.tgz#e167154a94cb5f14b28dc58f5356d2162f539811"
@@ -2509,6 +2516,11 @@ bootstrap@^4.5.0:
   resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-4.5.0.tgz#97d9dbcb5a8972f8722c9962483543b907d9b9ec"
   integrity sha512-Z93QoXvodoVslA+PWNdk23Hze4RBYIkpb5h8I2HY2Tu2h7A0LpAgLcyrhrSUyo2/Oxm2l1fRZPs1e5hnxnliXA==
 
+bowser@^1.7.3:
+  version "1.9.4"
+  resolved "https://registry.yarnpkg.com/bowser/-/bowser-1.9.4.tgz#890c58a2813a9d3243704334fa81b96a5c150c9a"
+  integrity sha512-9IdMmj2KjigRq6oWhmwv1W36pDuA4STQZ8q6YO9um+x07xgYNCD3Oou+WP/3L1HNz7iqythGet3/p4wvc8AAwQ==
+
 brace-expansion@^1.1.7:
   version "1.1.11"
   resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.11.tgz#3c7fcbf529d87226f3d2f52b966ff5271eb441dd"
@@ -3364,6 +3376,14 @@ css-has-pseudo@^0.10.0:
   dependencies:
     postcss "^7.0.6"
     postcss-selector-parser "^5.0.0-rc.4"
+
+css-in-js-utils@^2.0.0:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/css-in-js-utils/-/css-in-js-utils-2.0.1.tgz#3b472b398787291b47cfe3e44fecfdd9e914ba99"
+  integrity sha512-PJF0SpJT+WdbVVt0AOYp9C8GnuruRlL/UFW7932nLWmFLQTaWEzTBQEx7/hn4BuV+WON75iAViSUJLiU3PKbpA==
+  dependencies:
+    hyphenate-style-name "^1.0.2"
+    isobject "^3.0.1"
 
 css-loader@3.4.2:
   version "3.4.2"
@@ -5251,6 +5271,11 @@ https-browserify@^1.0.0:
   resolved "https://registry.yarnpkg.com/https-browserify/-/https-browserify-1.0.0.tgz#ec06c10e0a34c0f2faf199f7fd7fc78fffd03c73"
   integrity sha1-7AbBDgo0wPL68Zn3/X/Hj//QPHM=
 
+hyphenate-style-name@^1.0.2:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/hyphenate-style-name/-/hyphenate-style-name-1.0.3.tgz#097bb7fa0b8f1a9cf0bd5c734cf95899981a9b48"
+  integrity sha512-EcuixamT82oplpoJ2XU4pDtKGWQ7b00CD9f1ug9IaQ3p1bkHMiKCZ9ut9QDI6qsa6cpUuB+A/I+zLtdNK4n2DQ==
+
 iconv-lite@0.4.24, iconv-lite@^0.4.24:
   version "0.4.24"
   resolved "https://registry.yarnpkg.com/iconv-lite/-/iconv-lite-0.4.24.tgz#2022b4b25fbddc21d2f524974a474aafe733908b"
@@ -5382,6 +5407,14 @@ ini@^1.3.5:
   version "1.3.5"
   resolved "https://registry.yarnpkg.com/ini/-/ini-1.3.5.tgz#eee25f56db1c9ec6085e0c22778083f596abf927"
   integrity sha512-RZY5huIKCMRWDUqZlEi72f/lmXKMvuszcMBduliQ3nnWbx9X/ZBQO7DijMEYS9EhHBb2qacRUMtC7svLwe0lcw==
+
+inline-style-prefixer@^3.0.6:
+  version "3.0.8"
+  resolved "https://registry.yarnpkg.com/inline-style-prefixer/-/inline-style-prefixer-3.0.8.tgz#8551b8e5b4d573244e66a34b04f7d32076a2b534"
+  integrity sha1-hVG45bTVcyROZqNLBPfTIHaitTQ=
+  dependencies:
+    bowser "^1.7.3"
+    css-in-js-utils "^2.0.0"
 
 inquirer@7.0.4:
   version "7.0.4"
@@ -8515,7 +8548,7 @@ prompts@^2.0.1:
     kleur "^3.0.3"
     sisteransi "^1.0.4"
 
-prop-types@^15.5.8, prop-types@^15.6.1, prop-types@^15.6.2, prop-types@^15.7.2:
+prop-types@^15.0.0, prop-types@^15.5.8, prop-types@^15.6.0, prop-types@^15.6.1, prop-types@^15.6.2, prop-types@^15.7.2:
   version "15.7.2"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.7.2.tgz#52c41e75b8c87e72b9d9360e0206b99dcbffa6c5"
   integrity sha512-8QQikdH7//R2vurIJSutZ1smHYTcLpRWEOlHnzcWHmBYrOGUysKwSsrC89BCiFj3CbrfJ/nXFdJepOVrY1GCHQ==
@@ -8753,6 +8786,16 @@ react-fade-in@^1.1.0:
   resolved "https://registry.yarnpkg.com/react-fade-in/-/react-fade-in-1.1.0.tgz#82272eba4ae5843fed333e2c7f74dc5dbdab3864"
   integrity sha512-sR36bwyimCRapcHEuEjbQkQzUuCh3BIOeQvrUc9X4HBN6nswZ3nuq1Zb0vh3lG1Xx2ZMduGMw8u4AwNGbHkI0g==
 
+react-fader@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/react-fader/-/react-fader-3.1.1.tgz#71926641e2683c6b7cbcb6c3192fdc86cb737e9e"
+  integrity sha512-5MXbFCOW/MgsqYDmlFb81C8vx07qS/Vey5viCUEq0JCnbLYrIBWrFZGXF/+Fe5AIDf+IS6wsBo88WmGBGbMUKw==
+  dependencies:
+    "@babel/runtime" "^7.1.5"
+    inline-style-prefixer "^3.0.6"
+    prop-types "^15.6.0"
+    react-transition-context "^5.0.0"
+
 react-flip-numbers@^3.0.5:
   version "3.0.5"
   resolved "https://registry.yarnpkg.com/react-flip-numbers/-/react-flip-numbers-3.0.5.tgz#37fc3f9416575bfb9e9b7af44a7d64aaf922c712"
@@ -8852,6 +8895,14 @@ react-split-flap-display@^0.3.2:
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/react-split-flap-display/-/react-split-flap-display-0.3.2.tgz#ec343190c67b3d2e79a4732fcc36dc92cde61ea3"
   integrity sha512-O4go1ydtB8StoSFZoVtryFwgLNZy+4JP5GVIcrW0xli38jfjvLbpCVg9RmkZKw1d+/DeF78Co8XxPakYowhYOg==
+
+react-transition-context@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/react-transition-context/-/react-transition-context-5.0.0.tgz#e89de0c2c69107182676f20ea06438fe8e151f95"
+  integrity sha512-8g6HnPtxPPMti+X4jG4X0DQ3f3CCkmVLQrYSmgc271+uABSASnndKHV7y1xhD2Z9xmdjV/6i9UPCFzSSkbsFDA==
+  dependencies:
+    "@babel/runtime" "^7.1.5"
+    prop-types "^15.0.0"
 
 react-transition-group@^2.3.1:
   version "2.9.0"
